@@ -211,18 +211,24 @@ async function callFalKontextEdit(apiKey, promptText, beforeDataUrl){
   }
   const requestId = submitJson.request_id;
 
+  console.log("[fal] kuyruğa alındı, request_id=" + requestId + " ilk durum=" + (submitJson.status || "?"));
+
   const statusUrl = "https://queue.fal.run/" + appId + "/requests/" + requestId + "/status";
   const resultUrl = "https://queue.fal.run/" + appId + "/requests/" + requestId;
   let status = null;
-  for (let i = 0; i < 40; i++){
+  const pollStart = Date.now();
+  for (let i = 0; i < 75; i++){
     await new Promise((r) => setTimeout(r, 1500));
     const stRes = await fetch(statusUrl, { headers: { "Authorization": "Key " + apiKey } });
     const stJson = await stRes.json().catch(() => null);
     status = stJson && stJson.status;
+    if (i % 4 === 0 || status === "COMPLETED" || status === "ERROR"){
+      console.log("[fal] poll #" + i + " (+" + Math.round((Date.now() - pollStart) / 1000) + "sn) durum=" + status);
+    }
     if (status === "COMPLETED") break;
     if (status === "ERROR") throw new Error("fal.ai üretim hatası" + (stJson.error ? " – " + JSON.stringify(stJson.error) : ""));
   }
-  if (status !== "COMPLETED") throw new Error("fal.ai zaman aşımına uğradı (60sn içinde tamamlanmadı)");
+  if (status !== "COMPLETED") throw new Error("fal.ai zaman aşımına uğradı (" + Math.round((Date.now() - pollStart) / 1000) + "sn içinde tamamlanmadı, son durum=" + status + ")");
 
   const resRes = await fetch(resultUrl, { headers: { "Authorization": "Key " + apiKey } });
   const resJson = await resRes.json().catch(() => null);
