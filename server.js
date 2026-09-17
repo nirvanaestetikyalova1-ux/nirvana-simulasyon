@@ -204,26 +204,34 @@ async function callFalKontextEdit(apiKey, promptText, beforeDataUrl){
     throw new Error("fal.ai ağ hatası: " + networkErr.message);
   }
 
-  const submitJson = await submitRes.json().catch(() => null);
+  const submitText = await submitRes.text();
+  let submitJson = null;
+  try { submitJson = JSON.parse(submitText); } catch (e){ /* aşağıda ele alınacak */ }
   if (!submitRes.ok || !submitJson || !submitJson.request_id){
     const submitErr = submitJson && (submitJson.detail || submitJson.error || submitJson.message);
-    throw new Error("fal.ai HTTP " + submitRes.status + (submitErr ? " – " + JSON.stringify(submitErr) : ""));
+    throw new Error("fal.ai HTTP " + submitRes.status + (submitErr ? " – " + JSON.stringify(submitErr) : (" – ham yanıt: " + submitText.slice(0, 300))));
   }
   const requestId = submitJson.request_id;
 
-  console.log("[fal] kuyruğa alındı, request_id=" + requestId + " ilk durum=" + (submitJson.status || "?"));
+  console.log("[fal] kuyruğa alındı, request_id=" + requestId + " ilk durum=" + (submitJson.status || "?") + " ham=" + submitText.slice(0, 400));
 
-  const statusUrl = "https://queue.fal.run/" + appId + "/requests/" + requestId + "/status";
-  const resultUrl = "https://queue.fal.run/" + appId + "/requests/" + requestId;
+  // fal.ai bazen kendi status_url / response_url alanlarını döndürür — bunlar
+  // varsa bizim elle kurduğumuz URL'den daha güvenilir (API sürüm değişikliklerine
+  // karşı dayanıklı), o yüzden öncelik onlara veriliyor.
+  const statusUrl = submitJson.status_url || ("https://queue.fal.run/" + appId + "/requests/" + requestId + "/status");
+  const resultUrl = submitJson.response_url || ("https://queue.fal.run/" + appId + "/requests/" + requestId);
+  console.log("[fal] statusUrl=" + statusUrl + " resultUrl=" + resultUrl);
   let status = null;
   const pollStart = Date.now();
   for (let i = 0; i < 75; i++){
     await new Promise((r) => setTimeout(r, 1500));
     const stRes = await fetch(statusUrl, { headers: { "Authorization": "Key " + apiKey } });
-    const stJson = await stRes.json().catch(() => null);
+    const stText = await stRes.text();
+    let stJson = null;
+    try { stJson = JSON.parse(stText); } catch (e){ /* aşağıda ele alınacak */ }
     status = stJson && stJson.status;
-    if (i % 4 === 0 || status === "COMPLETED" || status === "ERROR"){
-      console.log("[fal] poll #" + i + " (+" + Math.round((Date.now() - pollStart) / 1000) + "sn) durum=" + status);
+    if (i % 4 === 0 || status === "COMPLETED" || status === "ERROR" || !stJson){
+      console.log("[fal] poll #" + i + " (+" + Math.round((Date.now() - pollStart) / 1000) + "sn) HTTP=" + stRes.status + " durum=" + status + (stJson ? "" : " ham=" + stText.slice(0, 200)));
     }
     if (status === "COMPLETED") break;
     if (status === "ERROR") throw new Error("fal.ai üretim hatası" + (stJson.error ? " – " + JSON.stringify(stJson.error) : ""));
