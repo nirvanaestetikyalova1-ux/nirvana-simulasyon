@@ -323,21 +323,24 @@ const routes = {
       const { model, promptText, beforeDataUrl } = body;
       if (!model || !promptText || !beforeDataUrl) return sendJson(res, 400, { error: "model, promptText, beforeDataUrl gerekli." });
       const img = await callGeminiEdit(apiKey, model, promptText, beforeDataUrl);
+      console.log("[gemini] OK model=" + model);
       sendJson(res, 200, img);
-    } catch (e){ sendJson(res, 502, { error: e.message || String(e) }); }
+    } catch (e){ console.error("[gemini] HATA: " + (e.message || String(e))); sendJson(res, 502, { error: e.message || String(e) }); }
   },
 
   "POST /api/fal/generate": async (req, res) => {
     if (!checkAccessCode(req)) return sendJson(res, 401, { error: "Geçersiz veya eksik erişim kodu." });
     const apiKey = process.env.FAL_KEY;
     if (!apiKey) return sendJson(res, 400, { error: "Sunucuda FAL_KEY tanımlı değil." });
+    console.log("[fal] istek alındı, FAL_KEY uzunluk=" + apiKey.length + " içerik ':' var mı=" + apiKey.includes(":"));
     try {
       const body = await readJsonBody(req, 25 * 1024 * 1024);
       const { promptText, beforeDataUrl } = body;
       if (!promptText || !beforeDataUrl) return sendJson(res, 400, { error: "promptText, beforeDataUrl gerekli." });
       const img = await callFalKontextEdit(apiKey, promptText, beforeDataUrl);
+      console.log("[fal] OK");
       sendJson(res, 200, img);
-    } catch (e){ sendJson(res, 502, { error: e.message || String(e) }); }
+    } catch (e){ console.error("[fal] HATA: " + (e.message || String(e))); sendJson(res, 502, { error: e.message || String(e) }); }
   },
 
   "POST /api/openai/generate": async (req, res) => {
@@ -349,8 +352,9 @@ const routes = {
       const { promptText, beforeDataUrl } = body;
       if (!promptText || !beforeDataUrl) return sendJson(res, 400, { error: "promptText, beforeDataUrl gerekli." });
       const img = await callOpenAIEdit(apiKey, promptText, beforeDataUrl);
+      console.log("[openai] OK");
       sendJson(res, 200, img);
-    } catch (e){ sendJson(res, 502, { error: e.message || String(e) }); }
+    } catch (e){ console.error("[openai] HATA: " + (e.message || String(e))); sendJson(res, 502, { error: e.message || String(e) }); }
   },
 
   "POST /api/youcam/generate": async (req, res) => {
