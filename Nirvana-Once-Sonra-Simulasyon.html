@@ -265,9 +265,13 @@
     </div>
 
     <div class="field">
-      <label>İşlem kategorisi <span class="hint">— birden fazla seçebilirsiniz, hepsi aynı görselde birlikte uygulanır</span></label>
+      <label>İşlem kategorisi <span class="hint">— birden fazla seçebilirsiniz, hepsi aynı görselde birlikte uygulanır. Seçimler bir sonraki denemeye de taşınır, unutmayın!</span></label>
     </div>
     <div class="cat-grid" id="catGrid"></div>
+    <div style="display:flex; align-items:center; gap:10px; margin:6px 0 4px;">
+      <span class="hint" id="selectedCatsSummary">Hiçbiri seçili değil</span>
+      <button type="button" class="btn-ghost" id="clearCatsBtn" style="margin-left:auto">Seçimi Temizle</button>
+    </div>
 
     <div class="field" id="customPromptField" hidden>
       <label for="customPrompt">Uygulanacak değişikliği yazın</label>
@@ -279,8 +283,22 @@
       <div id="botoxZonesList" class="botox-zones"></div>
     </div>
 
+    <div class="field" id="youcamZonesField" hidden>
+      <label>Zayıflatılacak bölgeler <span class="hint">— bölgeyi işaretleyin, her biri için 1-5 arası şiddeti kendiniz ayarlayın (YouCam AI Body API)</span></label>
+      <div id="youcamZonesList" class="botox-zones"></div>
+      <div class="field" id="youcamKeyField" style="margin-top:10px">
+        <label for="youcamApiKey">YouCam (Perfect Corp) API anahtarı</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="password" id="youcamApiKey" placeholder="Hesap açtıktan sonra buraya yapıştırın" style="flex:1;">
+          <button type="button" class="btn-ghost" id="forgetYoucamKeyBtn" title="Kaydedilen anahtarı bu bilgisayardan sil">Unut</button>
+        </div>
+        <span class="hint">Hesabınız yoksa: <a href="https://yce.perfectcorp.com/api-console/en/" target="_blank" rel="noopener">yce.perfectcorp.com/api-console</a> üzerinden ücretsiz açabilirsiniz.</span>
+        <span class="hint" id="youcamKeySavedNote" hidden>Kaydedildi ✓</span>
+      </div>
+    </div>
+
     <div class="field">
-      <label>Yoğunluk <span class="hint" id="intensityGeneralHint">— Botoks dışındaki kategoriler için</span></label>
+      <label>Yoğunluk <span class="hint" id="intensityGeneralHint">— Botoks ve Zayıflama dışındaki kategoriler için</span></label>
       <div class="intensity-row">
         <input type="range" id="intensity" min="1" max="3" value="2" step="1">
         <span class="intensity-label" id="intensityLabel">Orta</span>
@@ -348,6 +366,13 @@
   // Bu dosyayı başka biriyle paylaşırsanız anahtarınızı da paylaşmış olursunuz.
   var EMBEDDED_API_KEY = "AQ.Ab8RN6IXshUAcmLBarld5sgjIC3ohNvax_7e8N2rNZtI_EVYXQ";
 
+  // YouCam (Perfect Corp) "AI Body Reshape" API anahtarı — Zayıflama / Vücut
+  // kategorisi için. Buraya gömülü olduğu için form her seferinde sormuyor;
+  // boş bırakılırsa kullanıcı formdaki "YouCam API anahtarı" kutusuna kendi
+  // anahtarını girebilir (tarayıcıda saklanır). Anahtar: yce.perfectcorp.com/api-console
+  var EMBEDDED_YOUCAM_API_KEY = "sk-XOyi6kq-IvmgUBvhnbZU775jHxC0Lu9C1EQb_EQAPTJQGadk_LIO4UtyifwfkxGc";
+  var YOUCAM_API_BASE = "https://yce-api-01.makeupar.com";
+
   var CATEGORIES = [
     { key:"sac_ekimi", name:"Saç Ekimi", desc:"Saç çıkışı / dolgunluk simülasyonu",
       prompt:"Simulate the realistic visual outcome of a hair transplant procedure on this photo. Add natural-looking hair growth to thinning or bald areas of the scalp, matching the person's existing hair color and texture, with a hairline shape appropriate for their face shape. {intensity} Keep the face, skin, ears, background, lighting, and clothing exactly unchanged. This is a cosmetic sales preview, not a medical claim." },
@@ -357,8 +382,8 @@
       prompt:"Simulate the realistic visual effect of subtle dermal filler on this photo: gently refine and add natural volume to the lips and/or cheeks as appropriate, and soften nasolabial folds if visible. {intensity} Keep it natural, not exaggerated, overfilled or plastic-looking. Keep identity, skin tone, hairstyle, background and lighting unchanged." },
     { key:"kalici_makyaj", name:"Kalıcı Makyaj", desc:"Kaş, göz kalemi, dudak renklendirme simülasyonu",
       prompt:"Simulate the realistic visual effect of permanent makeup on this photo: add natural, well-defined and evenly shaped eyebrows suited to the face, subtle eyeliner definition along the lash line, and a soft lip blush/tint that enhances the natural lip color. {intensity} Keep the face, skin, hairstyle, background and lighting unchanged, and keep the result natural-looking, not overdone or artificial." },
-    { key:"zayiflama", name:"Zayıflama / Vücut", desc:"Kilo verme, vücut kontürü",
-      prompt:"Simulate the realistic visual effect of moderate weight loss and body contouring on this photo: slim the visible body silhouette naturally and proportionally, especially around the waist/midsection. {intensity} Keep the face, clothing style, pose, background and lighting unchanged, and keep the result realistic and anatomically natural, not exaggerated." },
+    { key:"zayiflama", name:"Zayıflama / Vücut", desc:"Bölge bazlı vücut şekillendirme, 1-5 şiddet ayarı (YouCam AI Body)",
+      special:"youcam" },
     { key:"gulus", name:"Gülüş Tasarımı", desc:"Diş beyazlatma / gülüş simülasyonu",
       prompt:"Simulate the realistic visual effect of a smile makeover on this photo: make the visible teeth whiter and more evenly aligned when the person is smiling. {intensity} Keep the face, lips shape, skin, background and lighting unchanged, and keep it natural-looking." },
     { key:"sac_boya", name:"Saç Rengi / Kesimi", desc:"Renk veya kesim önizlemesi",
@@ -390,9 +415,30 @@
     5: "very strong, maximally smoothed while still looking physically plausible"
   };
 
+  // Zayıflama / Vücut: YouCam "AI Body Reshape" API'sindeki bölge parametreleri.
+  // Her bölge için 1-5 arası şiddet, API'nin -100..100 ölçeğinde negatif (zayıflatma
+  // yönünde) bir büyüklüğe çevrilir. "params" birden fazlaysa (ör. boyun) her ikisine
+  // aynı değer uygulanır.
+  // "positive:true" olan bölgelerde API 0..100 arası ve sadece pozitif yönde
+  // çalışıyor (ör. boyun: 0=orijinal, 100=daha sıkı/toplu görünüm), diğerlerinde
+  // zayıflatma yönü negatiftir (-100..100 ölçeğinde).
+  var BODY_ZONES = [
+    { key:"bel", name:"Bel", params:["waist"] },
+    { key:"karin", name:"Karın", params:["belly"] },
+    { key:"kollar", name:"Kollar", params:["arm"] },
+    { key:"bacaklar", name:"Bacaklar", params:["leg"] },
+    { key:"kalca", name:"Kalça", params:["hip"] },
+    { key:"boyun", name:"Boyun / Çift Çene", params:["neck_left","neck_right"], positive:true }
+  ];
+  var BODY_LEVEL_MAGNITUDE = { 1:-15, 2:-30, 3:-50, 4:-70, 5:-90 };
+  var BODY_LEVEL_TEXT = {
+    1: "hafif", 2: "hafif-orta", 3: "orta", 4: "belirgin", 5: "maksimum"
+  };
+
   var state = {
     selectedCategories: [], // birden fazla işlem aynı anda seçilebilir
     botoxZoneLevels: {}, // { zoneKey: 1-5 } - sadece işaretli bölgeler burada olur
+    bodyZoneLevels: {}, // { zoneKey: 1-5 } - Zayıflama/Vücut için, sadece işaretli bölgeler burada olur
     beforeDataUrl: null,
     lastResult: null, // {beforeDataUrl, afterDataUrl, categories, categoryName, customerName, intensity, note, createdAt}
     gallery: []
@@ -432,6 +478,8 @@
         }
         $("customPromptField").hidden = state.selectedCategories.indexOf("serbest") === -1;
         $("botoxZonesField").hidden = state.selectedCategories.indexOf("botoks") === -1;
+        $("youcamZonesField").hidden = state.selectedCategories.indexOf("zayiflama") === -1;
+        updateSelectedCatsSummary();
       });
     });
 
@@ -442,6 +490,27 @@
       filterSel.appendChild(opt);
     });
   }
+
+  // Seçili kategorileri üstte küçük bir özet olarak göster — bir önceki denemeden
+  // kalan seçimleri fark etmeden yeni bir teste devam etmeyi önlemek için.
+  function updateSelectedCatsSummary(){
+    var names = CATEGORIES.filter(function(c){ return state.selectedCategories.indexOf(c.key) !== -1; })
+      .map(function(c){ return c.name; });
+    $("selectedCatsSummary").textContent = names.length ? ("Seçili: " + names.join(", ")) : "Hiçbiri seçili değil";
+  }
+
+  $("clearCatsBtn").addEventListener("click", function(){
+    state.selectedCategories = [];
+    state.botoxZoneLevels = {};
+    state.bodyZoneLevels = {};
+    $("catGrid").querySelectorAll(".cat-card.selected").forEach(function(btn){ btn.classList.remove("selected"); });
+    $("customPromptField").hidden = true;
+    $("botoxZonesField").hidden = true;
+    $("youcamZonesField").hidden = true;
+    renderBotoxZones();
+    renderBodyZones();
+    updateSelectedCatsSummary();
+  });
 
   // ---------- botoks bölgeleri ----------
   function renderBotoxZones(){
@@ -477,6 +546,44 @@
       slider.addEventListener("input", function(){
         label.textContent = slider.value + "/5 · " + BOTOX_LEVEL_TEXT[slider.value];
         if (check.checked) state.botoxZoneLevels[z.key] = +slider.value;
+      });
+    });
+  }
+
+  // ---------- zayıflama / vücut bölgeleri (YouCam) ----------
+  function renderBodyZones(){
+    var wrap = $("youcamZonesList");
+    wrap.innerHTML = BODY_ZONES.map(function(z){
+      return '<div class="botox-zone-row" data-zone="'+z.key+'">' +
+        '<label class="botox-zone-check"><input type="checkbox" data-zone-check="'+z.key+'"> '+escapeHtml(z.name)+'</label>' +
+        '<div class="botox-zone-slider">' +
+          '<input type="range" min="1" max="5" step="1" value="3" data-zone-level="'+z.key+'" disabled>' +
+          '<span class="botox-zone-level" data-zone-label="'+z.key+'">—</span>' +
+        '</div>' +
+      '</div>';
+    }).join("");
+
+    BODY_ZONES.forEach(function(z){
+      var row = wrap.querySelector('.botox-zone-row[data-zone="'+z.key+'"]');
+      var check = wrap.querySelector('[data-zone-check="'+z.key+'"]');
+      var slider = wrap.querySelector('[data-zone-level="'+z.key+'"]');
+      var label = wrap.querySelector('[data-zone-label="'+z.key+'"]');
+
+      check.addEventListener("change", function(){
+        slider.disabled = !check.checked;
+        if (check.checked){
+          state.bodyZoneLevels[z.key] = +slider.value;
+          label.textContent = slider.value + "/5 · " + BODY_LEVEL_TEXT[slider.value];
+          row.classList.add("active");
+        } else {
+          delete state.bodyZoneLevels[z.key];
+          label.textContent = "—";
+          row.classList.remove("active");
+        }
+      });
+      slider.addEventListener("input", function(){
+        label.textContent = slider.value + "/5 · " + BODY_LEVEL_TEXT[slider.value];
+        if (check.checked) state.bodyZoneLevels[z.key] = +slider.value;
       });
     });
   }
@@ -638,16 +745,103 @@
     throw new Error(attempts.join("  |  "));
   }
 
+  // ---------- YouCam (Perfect Corp) AI Body Reshape ----------
+  // Not: Bu entegrasyon, Perfect Corp'un resmi dokümantasyon sayfaları
+  // (docs.perfectcorp.com/reference/ai_body_reshape ve /reference/file)
+  // taranarak tam alan adlarıyla yazıldı, ama gerçek bir hesapla uçtan uca
+  // test edilmedi — küçük bir uyuşmazlık çıkarsa hata mesajındaki ham yanıtı
+  // bana iletmeniz yeterli, hemen düzeltirim.
+  function buildYoucamFeatures(){
+    var features = {};
+    BODY_ZONES.filter(function(z){ return state.bodyZoneLevels[z.key]; }).forEach(function(z){
+      var mag = BODY_LEVEL_MAGNITUDE[state.bodyZoneLevels[z.key]];
+      var val = z.positive ? Math.abs(mag) : mag;
+      z.params.forEach(function(p){ features[p] = val; });
+    });
+    return features;
+  }
+
+  async function urlToDataUrl(url){
+    var res = await fetch(url);
+    var blob = await res.blob();
+    return await new Promise(function(resolve, reject){
+      var reader = new FileReader();
+      reader.onload = function(){ resolve(reader.result); };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function callYoucamBodyReshape(apiKey, features){
+    var beforeDataUrl = state.beforeDataUrl;
+    var blob = await (await fetch(beforeDataUrl)).blob();
+    var mime = blob.type || "image/jpeg";
+
+    // 1) Yükleme adresi al — POST /s2s/v2.0/file
+    var fileRes = await safeJsonFetch(YOUCAM_API_BASE + "/s2s/v2.0/file", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" },
+      body: JSON.stringify({ files: [{ content_type: mime, file_name: "once-fotografi.jpg", file_size: blob.size }] })
+    });
+    if (!fileRes.ok) throw new Error("YouCam: dosya yükleme adresi alınamadı — " + fileRes.summary);
+    var fileEntry = fileRes.json && fileRes.json.files && fileRes.json.files[0];
+    var fileId = fileEntry && fileEntry.file_id;
+    var uploadReq = fileEntry && fileEntry.requests && fileEntry.requests[0];
+    if (!fileId || !uploadReq || !uploadReq.url){
+      throw new Error("YouCam: yükleme yanıtında file_id/url bulunamadı. Ham yanıt: " + JSON.stringify(fileRes.json).slice(0,300));
+    }
+
+    // 2) Fotoğrafı, API'nin verdiği adrese/yöntem+başlıklarla yükle
+    var putRes = await fetch(uploadReq.url, {
+      method: uploadReq.method || "PUT",
+      headers: uploadReq.headers || { "Content-Type": mime },
+      body: blob
+    });
+    if (!putRes.ok) throw new Error("YouCam: fotoğraf yüklenemedi (HTTP " + putRes.status + ")");
+
+    // 3) Görev oluştur — POST /s2s/v2.0/task/body-reshape
+    var taskRes = await safeJsonFetch(YOUCAM_API_BASE + "/s2s/v2.0/task/body-reshape", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" },
+      body: JSON.stringify({ src_file_id: fileId, version: "1.0", index: 0, features: features })
+    });
+    if (!taskRes.ok) throw new Error("YouCam: görev oluşturulamadı — " + taskRes.summary);
+    var taskId = taskRes.json && taskRes.json.data && taskRes.json.data.task_id;
+    if (!taskId) throw new Error("YouCam: görev kimliği alınamadı. Ham yanıt: " + JSON.stringify(taskRes.json).slice(0,300));
+
+    // 4) Sonucu sorgula (polling) — GET /s2s/v2.0/task/body-reshape/{task_id}, en fazla ~45 sn bekle
+    for (var attempt=0; attempt<30; attempt++){
+      await new Promise(function(r){ setTimeout(r, 1500); });
+      var pollRes = await safeJsonFetch(YOUCAM_API_BASE + "/s2s/v2.0/task/body-reshape/" + taskId, {
+        headers: { "Authorization": "Bearer " + apiKey }
+      });
+      if (!pollRes.ok) continue;
+      var d = pollRes.json && pollRes.json.data;
+      var status = d && d.task_status;
+      if (status === "success"){
+        var resultUrl = d.results && d.results.url;
+        if (!resultUrl) throw new Error("YouCam: sonuç görseli adresi bulunamadı. Ham yanıt: " + JSON.stringify(pollRes.json).slice(0,300));
+        return resultUrl;
+      }
+      if (status === "error"){
+        throw new Error("YouCam işlemi başarısız oldu (" + ((d && (d.error_message || d.error)) || "bilinmeyen hata") + ").");
+      }
+    }
+    throw new Error("YouCam: sonuç 45 saniye içinde gelmedi (zaman aşımı).");
+  }
+
   // ---------- generate ----------
   $("generateBtn").addEventListener("click", async function(){
     clearError();
     var apiKey = EMBEDDED_API_KEY || $("apiKey").value.trim();
+    var youcamKey = EMBEDDED_YOUCAM_API_KEY || $("youcamApiKey").value.trim();
     var model = $("modelSelect").value;
     var customerName = $("custName").value.trim();
     var intensity = $("intensity").value;
     var cats = CATEGORIES.filter(function(c){ return state.selectedCategories.indexOf(c.key) !== -1; });
+    var hasYoucam = cats.some(function(c){ return c.key === "zayiflama"; });
+    var geminiCats = cats.filter(function(c){ return c.key !== "zayiflama"; });
 
-    if (!apiKey){ showError("Lütfen önce API anahtarınızı girin."); return; }
     if (!state.beforeDataUrl){ showError("Lütfen önce fotoğrafı yükleyin."); return; }
     if (!cats.length){ showError("Lütfen en az bir işlem kategorisi seçin."); return; }
     if (!$("consentBox").checked){ showError("Devam etmeden önce müşteri onayı kutusunu işaretleyin."); return; }
@@ -662,6 +856,13 @@
       showError("Botoks için en az bir bölge işaretleyip şiddetini ayarlayın.");
       return;
     }
+    var bodyZoneKeys = Object.keys(state.bodyZoneLevels);
+    if (hasYoucam && !bodyZoneKeys.length){
+      showError("Zayıflama için en az bir bölge işaretleyip şiddetini ayarlayın.");
+      return;
+    }
+    if (hasYoucam && !youcamKey){ showError("Lütfen Zayıflama kategorisi için YouCam API anahtarınızı girin."); return; }
+    if (geminiCats.length && !apiKey){ showError("Lütfen önce Google API anahtarınızı girin."); return; }
 
     var intensityText = INTENSITY_TEXT[intensity] || "";
 
@@ -682,18 +883,27 @@
       return (c.prompt || "").replace("{intensity}", intensityText);
     }
 
-    var promptText = cats.length === 1
-      ? (cats[0].key === "serbest"
-          ? "Apply the following realistic cosmetic change to this photo, keeping everything else (identity, background, lighting) unchanged: " + buildCategoryLine(cats[0])
-          : buildCategoryLine(cats[0]))
-      : "Apply ALL of the following realistic cosmetic changes to this SAME photo TOGETHER, in one combined result. " +
+    var promptText = "";
+    if (geminiCats.length === 1){
+      promptText = geminiCats[0].key === "serbest"
+        ? "Apply the following realistic cosmetic change to this photo, keeping everything else (identity, background, lighting) unchanged: " + buildCategoryLine(geminiCats[0])
+        : buildCategoryLine(geminiCats[0]);
+    } else if (geminiCats.length > 1){
+      promptText = "Apply ALL of the following realistic cosmetic changes to this SAME photo TOGETHER, in one combined result. " +
         " Keep everything not mentioned below (identity, background, lighting, clothing) unchanged.\n" +
-        cats.map(function(c, i){ return (i+1) + ") " + buildCategoryLine(c); }).join("\n");
+        geminiCats.map(function(c, i){ return (i+1) + ") " + buildCategoryLine(c); }).join("\n");
+    }
 
     var combinedName = cats.map(function(c){
-      if (c.key !== "botoks") return c.name;
-      var zoneNames = BOTOX_ZONES.filter(function(z){ return state.botoxZoneLevels[z.key]; }).map(function(z){ return z.name; });
-      return c.name + " (" + zoneNames.join(", ") + ")";
+      if (c.key === "botoks"){
+        var botoxZoneNames = BOTOX_ZONES.filter(function(z){ return state.botoxZoneLevels[z.key]; }).map(function(z){ return z.name; });
+        return c.name + " (" + botoxZoneNames.join(", ") + ")";
+      }
+      if (c.key === "zayiflama"){
+        var bodyZoneNames = BODY_ZONES.filter(function(z){ return state.bodyZoneLevels[z.key]; }).map(function(z){ return z.name; });
+        return c.name + " (" + bodyZoneNames.join(", ") + ")";
+      }
+      return c.name;
     }).join(" + ");
 
     var btn = this;
@@ -701,8 +911,22 @@
     btn.innerHTML = '<span class="spinner"></span>Üretiliyor…';
 
     try {
-      var imgResult = await callGeminiEdit(apiKey, model, promptText, state.beforeDataUrl);
-      var afterRaw = "data:" + imgResult.mime + ";base64," + imgResult.data;
+      var workingBeforeUrl = state.beforeDataUrl;
+      var afterRaw = null;
+
+      if (hasYoucam){
+        btn.innerHTML = '<span class="spinner"></span>Vücut simülasyonu (YouCam)…';
+        var youcamResultUrl = await callYoucamBodyReshape(youcamKey, buildYoucamFeatures());
+        workingBeforeUrl = await urlToDataUrl(youcamResultUrl);
+        afterRaw = workingBeforeUrl;
+      }
+
+      if (geminiCats.length){
+        btn.innerHTML = '<span class="spinner"></span>Üretiliyor…';
+        var imgResult = await callGeminiEdit(apiKey, model, promptText, workingBeforeUrl);
+        afterRaw = "data:" + imgResult.mime + ";base64," + imgResult.data;
+      }
+
       addWatermark(afterRaw, function(watermarked){
         state.lastResult = {
           beforeDataUrl: state.beforeDataUrl,
@@ -720,7 +944,7 @@
         $("resultWrap").scrollIntoView({behavior:"smooth", block:"start"});
       });
     } catch(err){
-      showError("Görsel üretilemedi: " + err.message + " — API anahtarınızı, model adını ve internet bağlantınızı kontrol edin.");
+      showError("Görsel üretilemedi: " + err.message + " — API anahtarlarınızı ve internet bağlantınızı kontrol edin.");
     } finally {
       btn.disabled = false;
       btn.textContent = "Simülasyon Oluştur";
@@ -895,6 +1119,41 @@
     $("keySavedNote").hidden = true;
   });
 
+  // YouCam API anahtarı — Gemini anahtarıyla aynı mantık: gömülüyse hiç sorulmaz,
+  // gömülü değilse tarayıcıda (localStorage) hatırlanır.
+  var STORAGE_YOUCAM_KEY = "nirvana_youcam_api_key";
+  function loadSavedYoucamKey(){
+    try {
+      var saved = localStorage.getItem(STORAGE_YOUCAM_KEY);
+      if (saved){
+        $("youcamApiKey").value = saved;
+        $("youcamKeySavedNote").hidden = false;
+      }
+    } catch(e){}
+  }
+  function saveYoucamKeyIfPresent(){
+    try {
+      var val = $("youcamApiKey").value.trim();
+      if (val){
+        localStorage.setItem(STORAGE_YOUCAM_KEY, val);
+        $("youcamKeySavedNote").hidden = false;
+      } else {
+        localStorage.removeItem(STORAGE_YOUCAM_KEY);
+        $("youcamKeySavedNote").hidden = true;
+      }
+    } catch(e){}
+  }
+  $("youcamApiKey").addEventListener("change", saveYoucamKeyIfPresent);
+  $("youcamApiKey").addEventListener("blur", saveYoucamKeyIfPresent);
+  $("forgetYoucamKeyBtn").addEventListener("click", function(){
+    try { localStorage.removeItem(STORAGE_YOUCAM_KEY); } catch(e){}
+    $("youcamApiKey").value = "";
+    $("youcamKeySavedNote").hidden = true;
+  });
+  function applyYoucamKeyVisibility(){
+    $("youcamKeyField").hidden = !!EMBEDDED_YOUCAM_API_KEY;
+  }
+
   // Anahtar dosyaya gömülüyse ayar panelini gizle, sadece küçük bir bilgi
   // notu göster; "Ayarları göster" ile istenirse yine de açılabilir.
   function applyAutoConnectVisibility(){
@@ -915,9 +1174,12 @@
   // ---------- init ----------
   renderCatGrid();
   renderBotoxZones();
+  renderBodyZones();
   renderGallery();
   loadSavedSettings();
+  loadSavedYoucamKey();
   applyAutoConnectVisibility();
+  applyYoucamKeyVisibility();
 })();
 </script>
 
