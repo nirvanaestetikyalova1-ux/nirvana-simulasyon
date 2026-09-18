@@ -9,39 +9,27 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Karla:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#f4fafb; --surface:#ffffff; --surface-2:#eaf4f6; --surface-3:#d8ebee;
-    --ink:#0f2a30; --ink-soft:#3f5b62; --muted:#7c98a0; --line:#d7e8ea;
-    --accent:#137191; --accent-soft:rgba(19,113,145,.12); --accent-ink:#ffffff;
-    --sage:#1e9c8c; --sage-soft:rgba(30,156,140,.14); --danger:#d64545; --danger-soft:rgba(214,69,69,.12);
-    --cat-orange:#e8630c;
-    --shadow:0 1px 2px rgba(15,42,48,.07), 0 8px 28px -10px rgba(19,113,145,.22);
+    --bg:#171008; --surface:#241a0e; --surface-2:#33230f; --surface-3:#4a3213;
+    --ink:#f8ecd8; --ink-soft:#d9c39c; --muted:#a68a5c; --line:#5a4420;
+    --accent:#f0b429; --accent-soft:rgba(240,180,41,.18); --accent-ink:#231702;
+    --sage:#e8c974; --sage-soft:rgba(232,201,116,.16); --danger:#ff7a6b; --danger-soft:rgba(255,122,107,.16);
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 8px 28px -10px rgba(240,180,41,.3);
     --radius-s:8px; --radius-m:14px; --radius-l:20px;
   }
   *{ box-sizing:border-box; }
   html,body{ margin:0; }
   body{
-    background:var(--bg);
+    background:
+      radial-gradient(circle at 12% -6%, rgba(240,180,41,.22), transparent 42%),
+      radial-gradient(circle at 88% 8%, rgba(232,201,116,.14), transparent 40%),
+      repeating-linear-gradient(0deg, rgba(255,215,120,.05) 0px, rgba(255,215,120,.05) 1px, transparent 1px, transparent 40px),
+      repeating-linear-gradient(90deg, rgba(255,215,120,.05) 0px, rgba(255,215,120,.05) 1px, transparent 1px, transparent 40px),
+      var(--bg);
+    background-attachment:fixed;
     color:var(--ink);
     font-family:'Karla', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing:antialiased; min-height:100vh; padding:0 0 60px;
-    position:relative; overflow-x:hidden;
   }
-  /* ---------- animated background glow (Crisalix-style soft gradient wash) ---------- */
-  .bg-fx{ position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none; }
-  .bg-fx span{ position:absolute; border-radius:50%; filter:blur(70px); opacity:.6; will-change:transform; }
-  .bg-fx span:nth-child(1){ width:560px; height:560px; left:-160px; top:-180px;
-    background:radial-gradient(circle, rgba(19,113,145,.35), transparent 70%);
-    animation:bgFloat1 26s ease-in-out infinite; }
-  .bg-fx span:nth-child(2){ width:660px; height:660px; right:-200px; top:8%;
-    background:radial-gradient(circle, rgba(30,156,140,.28), transparent 70%);
-    animation:bgFloat2 32s ease-in-out infinite; }
-  .bg-fx span:nth-child(3){ width:500px; height:500px; left:18%; bottom:-220px;
-    background:radial-gradient(circle, rgba(19,113,145,.22), transparent 70%);
-    animation:bgFloat3 30s ease-in-out infinite; }
-  @keyframes bgFloat1{ 0%,100%{ transform:translate(0,0) scale(1); } 50%{ transform:translate(70px,50px) scale(1.08); } }
-  @keyframes bgFloat2{ 0%,100%{ transform:translate(0,0) scale(1); } 50%{ transform:translate(-60px,70px) scale(1.05); } }
-  @keyframes bgFloat3{ 0%,100%{ transform:translate(0,0) scale(1); } 50%{ transform:translate(50px,-60px) scale(1.1); } }
-  @media (prefers-reduced-motion: reduce){ .bg-fx span{ animation:none; } }
   h1,h2,h3{ font-family:'Space Grotesk', system-ui, sans-serif; margin:0; font-weight:600; letter-spacing:-.01em; }
   .mono{ font-family:'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; }
   button{ font-family:inherit; }
@@ -52,7 +40,7 @@
   header.top{
     display:flex; align-items:center; justify-content:space-between; gap:14px;
     padding:20px 26px; border-bottom:1px solid var(--line);
-    background:rgba(255,255,255,.78); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    background:rgba(23,16,8,.78); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
     position:sticky; top:0; z-index:5;
     flex-wrap:wrap;
   }
@@ -60,7 +48,7 @@
   .brand-mark{
     width:32px; height:32px; border-radius:50%; flex:none;
     background:conic-gradient(from 200deg, var(--accent), var(--sage), var(--accent));
-    box-shadow:0 0 14px rgba(19,113,145,.45);
+    box-shadow:0 0 14px rgba(240,180,41,.6);
   }
   .brand h1{ font-size:1.2rem; color:var(--ink); }
   .brand h1 em{ font-style:normal; color:var(--accent); }
@@ -82,55 +70,11 @@
   .notice strong{ color:var(--ink); }
   .notice.warn{ background:var(--danger-soft); border-left-color:var(--danger); }
 
-  /* ÖRNEK ÖNCE/SONRA GÖSTERİM ANİMASYONU (temsili, gerçek fotoğraf değil) */
-  .showcase{ display:flex; flex-direction:column; align-items:center; gap:8px; }
-  .showcase-frame{
-    position:relative; width:100%; max-width:520px; aspect-ratio:16/8; overflow:hidden;
-    border-radius:var(--radius-l); background:linear-gradient(135deg,var(--surface-2),var(--surface-3));
-    box-shadow:var(--shadow); border:1px solid var(--line);
-  }
-  .showcase-layer{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
-  .showcase-layer svg{ width:150px; height:150px; }
-  .showcase-layer.showcase-before svg .fig{ fill:var(--muted); }
-  .showcase-layer.showcase-after{ animation:showcaseWipe 7s ease-in-out infinite; }
-  .showcase-layer.showcase-after svg .fig{ fill:url(#showcaseGrad); }
-  .showcase-layer.showcase-after svg .spark{ opacity:0; animation:showcaseSpark 7s ease-in-out infinite; }
-  .showcase-divider{
-    position:absolute; top:0; bottom:0; left:100%; width:3px; background:var(--accent);
-    box-shadow:0 0 14px var(--accent); animation:showcaseDivider 7s ease-in-out infinite;
-  }
-  .showcase-tag{
-    position:absolute; top:12px; font-size:.66rem; font-weight:700; letter-spacing:.06em;
-    padding:4px 10px; border-radius:999px; text-transform:uppercase;
-  }
-  .showcase-tag-before{ left:12px; background:rgba(124,152,160,.22); color:var(--ink-soft); }
-  .showcase-tag-after{ right:12px; background:var(--sage-soft); color:var(--sage); }
-  .showcase-caption{ font-size:.72rem; color:var(--muted); text-align:center; }
-  @keyframes showcaseWipe{
-    0%,12%{ clip-path:inset(0 100% 0 0); }
-    50%{ clip-path:inset(0 0% 0 0); }
-    88%,100%{ clip-path:inset(0 100% 0 0); }
-  }
-  @keyframes showcaseDivider{
-    0%,12%{ left:100%; }
-    50%{ left:0%; }
-    88%,100%{ left:100%; }
-  }
-  @keyframes showcaseSpark{
-    0%,12%,88%,100%{ opacity:0; transform:scale(.6) rotate(0deg); }
-    50%{ opacity:1; transform:scale(1) rotate(25deg); }
-  }
-  @media (prefers-reduced-motion: reduce){
-    .showcase-layer.showcase-after{ animation:none; clip-path:inset(0 50% 0 0); }
-    .showcase-divider{ animation:none; left:50%; }
-    .showcase-layer.showcase-after svg .spark{ animation:none; opacity:1; }
-  }
-
   .panel{
-    background:rgba(255,255,255,.82);
+    background:linear-gradient(180deg, rgba(51,35,15,.72), rgba(23,16,8,.72));
     border:1px solid var(--line); border-radius:var(--radius-l); padding:20px 22px;
-    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-    box-shadow:0 1px 0 rgba(255,255,255,.6) inset, 0 10px 30px -18px rgba(15,42,48,.18);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 10px 30px -18px rgba(0,0,0,.6);
   }
   .panel h2{ font-size:1.15rem; margin-bottom:14px; }
   .panel h2 .step{ display:inline-block; width:22px; height:22px; border-radius:50%; background:var(--surface-2); color:var(--ink-soft); font-family:'Karla',sans-serif; font-size:.72rem; font-weight:700; text-align:center; line-height:22px; margin-right:8px; }
@@ -153,17 +97,17 @@
   .cat-card{
     border:1.5px solid var(--line); background:var(--surface-2); border-radius:var(--radius-m); padding:14px;
     cursor:pointer; text-align:left; display:flex; flex-direction:column; gap:5px;
-    box-shadow:0 4px 14px -8px rgba(15,42,48,.12);
+    box-shadow:0 4px 14px -8px rgba(0,0,0,.5);
     transition:border-color .12s, box-shadow .12s, background .12s, transform .12s;
   }
   .cat-card:hover{ background:var(--surface-3); border-color:var(--sage); transform:translateY(-1px); }
   .cat-card.selected{
     border-color:var(--accent);
-    box-shadow:0 0 0 2px var(--accent), 0 0 22px rgba(19,113,145,.3);
+    box-shadow:0 0 0 2px var(--accent), 0 0 22px rgba(240,180,41,.45);
     background:var(--accent-soft);
   }
-  .cat-card .cat-name{ font-weight:700; font-size:.92rem; color:var(--cat-orange); }
-  .cat-card.selected .cat-name{ color:var(--cat-orange); }
+  .cat-card .cat-name{ font-weight:700; font-size:.92rem; color:var(--ink); }
+  .cat-card.selected .cat-name{ color:var(--accent); }
   .cat-card .cat-desc{ font-size:.74rem; color:var(--ink-soft); line-height:1.4; }
 
   .upload-box{
@@ -240,28 +184,26 @@
     body > *:not(#printSheet){ display:none !important; }
     #printSheet{ display:block !important; }
   }
-  .print-sheet{ width:100%; max-width:680px; margin:0 auto; font-family:'Karla',sans-serif; color:#10262b; }
+  .print-sheet{ width:100%; max-width:680px; margin:0 auto; font-family:'Karla',sans-serif; color:#1a1210; }
   .print-sheet h2{ font-family:'Fraunces',serif; text-align:center; margin-bottom:2px; }
-  .print-sheet .p-sub{ text-align:center; color:#4f6d74; font-size:.85rem; margin-bottom:18px; }
+  .print-sheet .p-sub{ text-align:center; color:#6b5344; font-size:.85rem; margin-bottom:18px; }
   .print-sheet .p-compare{ display:flex; gap:16px; }
   .print-sheet .p-col{ flex:1; text-align:center; }
-  .print-sheet .p-col img{ width:100%; border-radius:10px; border:1px solid #cfe6ea; }
-  .print-sheet .p-col h4{ font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; color:#4f6d74; margin-bottom:6px; }
-  .print-sheet .p-note{ margin-top:16px; font-size:.72rem; color:#4f6d74; text-align:center; line-height:1.5; }
+  .print-sheet .p-col img{ width:100%; border-radius:10px; border:1px solid #ddc9b4; }
+  .print-sheet .p-col h4{ font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; color:#6b5344; margin-bottom:6px; }
+  .print-sheet .p-note{ margin-top:16px; font-size:.72rem; color:#6b5344; text-align:center; line-height:1.5; }
 
   input[type=file]{ font-size:.8rem; }
 </style>
 </head>
 <body>
 
-<div class="bg-fx" aria-hidden="true"><span></span><span></span><span></span></div>
-
 <header class="top">
   <div class="brand">
     <span class="brand-mark" aria-hidden="true"></span>
     <div>
       <h1>Nirvana <em>Önce/Sonra</em></h1>
-      <span class="tag">Satış için AI görsel simülasyon aracı · build v13</span>
+      <span class="tag">Satış için AI görsel simülasyon aracı</span>
     </div>
   </div>
   <div class="top-actions">
@@ -272,43 +214,6 @@
 </header>
 
 <main>
-
-  <div class="showcase" aria-hidden="true">
-    <div class="showcase-frame">
-      <div class="showcase-layer showcase-before">
-        <svg viewBox="0 0 120 120"><path class="fig" d="M60 14c-12 0-21 10-21 22 0 8 3 14 8 19-18 7-30 22-32 46-1 9 3 15 10 15h70c7 0 11-6 10-15-2-24-14-39-32-46 5-5 8-11 8-19 0-12-9-22-21-22z"/></svg>
-      </div>
-      <div class="showcase-layer showcase-after">
-        <svg viewBox="0 0 120 120">
-          <defs>
-            <linearGradient id="showcaseGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#1e9c8c"/>
-              <stop offset="100%" stop-color="#137191"/>
-            </linearGradient>
-          </defs>
-          <path class="fig" d="M60 14c-12 0-21 10-21 22 0 8 3 14 8 19-18 7-30 22-32 46-1 9 3 15 10 15h70c7 0 11-6 10-15-2-24-14-39-32-46 5-5 8-11 8-19 0-12-9-22-21-22z"/>
-          <path class="spark" d="M94 20l2.4 6.2 6.2 2.4-6.2 2.4-2.4 6.2-2.4-6.2-6.2-2.4 6.2-2.4z" fill="#f2b705"/>
-        </svg>
-      </div>
-      <div class="showcase-divider"></div>
-      <span class="showcase-tag showcase-tag-before">Önce</span>
-      <span class="showcase-tag showcase-tag-after">Sonra</span>
-    </div>
-    <span class="showcase-caption">Temsili gösterim animasyonu — gerçek bir müşteri fotoğrafı değildir</span>
-  </div>
-
-  <div class="notice warn" id="fileProtocolWarning" hidden>
-    <strong>⚠️ Bu sayfa doğrudan dosya olarak açılmış (adres: <code id="curProtoUrl"></code>).</strong>
-    Bu şekilde açıldığında AI görsel üretimi genelde <strong>"Failed to fetch"</strong> hatası verir.
-    Çözüm: bu HTML dosyasıyla aynı klasördeki <strong>Sunucu_Baslat.bat</strong> dosyasına çift tıklayın,
-    açılan siyah pencereyi KAPATMAYIN, ardından otomatik açılan <code>http://localhost:8765/...</code>
-    adresini kullanın (adres çubuğu <code>file://</code> değil <code>http://localhost</code> ile başlamalı).
-  </div>
-  <div class="notice warn" id="buildVersionNotice">
-    Bu kopyanın sürümü: <strong id="buildTagInline">build v13</strong> — eğer az önce güncelleme aldıysanız ve
-    burada eski bir sürüm görüyorsanız, tarayıcı eski dosyayı önbellekten gösteriyor olabilir:
-    sayfayı <strong>Ctrl+F5</strong> ile yenileyin ve masaüstündeki dosyanın gerçekten üzerine yazıldığından emin olun.
-  </div>
 
   <div class="notice">
     <strong>Bu ne işe yarar?</strong> Müşterinin "önce" fotoğrafını çekip seçtiğiniz işlem için yapay zekâ ile
@@ -322,50 +227,29 @@
   </div>
 
   <!-- SETTINGS -->
-  <!-- API anahtarları artık bu sayfada YOK — hepsi sunucuda (ortam değişkenlerinde)
-       saklanıyor. Burada sadece: şube erişim kodu, model tercihi ve sunucu/servis
-       durumunu gösteren salt-okunur bilgiler var. -->
   <section class="panel" id="settingsPanel" hidden>
-    <h2><span class="step">1</span>Ayarlar</h2>
+    <h2><span class="step">1</span>API Ayarı</h2>
     <div class="field-row">
       <div class="field">
-        <label for="accessCode">Şube erişim kodu <span class="hint">— IT/yönetici tarafından verilir, bir kere girilir</span></label>
+        <label for="apiKey">Google AI Studio API anahtarı</label>
         <div style="display:flex; gap:8px; align-items:center;">
-          <input type="password" id="accessCode" placeholder="erişim kodu" style="flex:1;">
-          <button type="button" class="btn-ghost" id="forgetAccessCodeBtn" title="Kaydedilen kodu bu bilgisayardan sil">Unut</button>
+          <input type="password" id="apiKey" placeholder="AQ...." style="flex:1;">
+          <button type="button" class="btn-ghost" id="forgetKeyBtn" title="Kaydedilen anahtarı bu bilgisayardan sil">Unut</button>
         </div>
-        <span class="hint" id="accessCodeSavedNote" hidden>Kaydedildi ✓</span>
+        <span class="hint" id="keySavedNote" hidden>Kaydedildi ✓</span>
       </div>
       <div class="field" style="max-width:260px">
-        <label for="modelSelect">Gemini modeli</label>
+        <label for="modelSelect">Model</label>
         <select id="modelSelect">
           <option value="gemini-2.5-flash-image">gemini-2.5-flash-image (nano banana)</option>
           <option value="gemini-3.1-flash-image">gemini-3.1-flash-image</option>
         </select>
       </div>
     </div>
-    <div class="field-row" style="align-items:flex-start;">
-      <div class="field">
-        <label>Sunucu tarafında aktif servisler <span class="hint">— bu liste sunucudaki ayarlara göre otomatik oluşur, buradan değiştirilemez</span></label>
-        <div id="providerStatusList" class="hint mono" style="margin-top:4px;">Kontrol ediliyor…</div>
-      </div>
-    </div>
-    <div class="field-row" style="align-items:flex-start;">
-      <div class="field">
-        <button type="button" class="btn-ghost" id="connTestBtn">🔌 Bağlantı Testi Yap</button>
-        <span class="hint">"Failed to fetch" hatası alıyorsanız önce buna basın — sunucunun Gemini/fal.ai/OpenAI'a gerçekten ulaşıp ulaşamadığını buradan, konsol/F12 açmadan görürsünüz.</span>
-        <div id="connTestResults" class="hint mono" style="margin-top:8px; white-space:pre-line;"></div>
-      </div>
-    </div>
   </section>
   <div class="notice" id="autoConnectedNotice">
-    ✓ Sunucuya bağlı — API anahtarları sunucuda güvenle saklanıyor, bu bilgisayarda bir şey girmeniz gerekmiyor.
+    ✓ Google hesabına bağlı — API anahtarı otomatik kullanılıyor, tekrar girmeniz gerekmiyor.
     <a href="#" id="showSettingsLink" style="color:var(--accent); text-decoration:underline;">Ayarları göster</a>
-  </div>
-  <div class="notice warn" id="accessCodeNeededNotice" hidden>
-    ⚠️ Bu sunucu bir erişim kodu istiyor. Devam etmeden önce
-    <a href="#" id="showSettingsLinkFromWarn" style="color:var(--accent); text-decoration:underline;">Ayarlar'dan</a>
-    şube erişim kodunuzu girin.
   </div>
 
   <!-- NEW SIMULATION -->
@@ -405,11 +289,6 @@
 
     <div class="field">
       <label for="beforePhoto">Önce fotoğrafı</label>
-      <div class="notice warn" id="zayiflamaPhotoWarning" hidden style="margin-bottom:10px;">
-        ⚠️ <strong>Zayıflama/Vücut</strong> seçili: bu kategori bel/karın/kalça bölgesini inceltir. Yakın plan bir
-        baş/omuz fotoğrafında bu bölge görünmediği için AI'da <strong>görünür bir değişiklik olmaz</strong>.
-        Lütfen belin (ideali tam boyun) göründüğü bir fotoğraf kullanın.
-      </div>
       <div class="upload-box" id="uploadBox">
         <span class="up-label" id="uploadLabel">Fotoğraf seçin veya kameradan çekin</span>
         <input type="file" id="beforePhoto" accept="image/*" capture="environment">
@@ -436,7 +315,6 @@
           <div class="imgbox"><img id="resAfter" alt="Sonrası"><span class="wm">AI SİMÜLASYON · gerçek sonucu temsil etmez</span></div>
         </div>
       </div>
-      <div class="hint mono" id="resProviderNote" style="margin-top:8px; text-align:center;"></div>
       <div class="result-actions">
         <button type="button" class="btn-ghost" id="discardBtn">Sil, tekrar dene</button>
         <button type="button" class="btn-primary" id="saveGalleryBtn">Galeriye kaydet</button>
@@ -465,29 +343,10 @@
 (function(){
   "use strict";
 
-  // API anahtarları artık bu dosyada YOK. Hepsi sunucuda (ortam değişkenlerinde)
-  // saklanıyor ve tarayıcı sadece kendi sunucumuza (/api/...) istek atıyor — bu
-  // sayede "Görünüm Kaynağı" ile anahtarlar görülemez, ve dosya kopyalanıp
-  // paylaşılsa bile hiçbir anahtar sızmaz. Sunucudan hangi sağlayıcıların aktif
-  // olduğu, sayfa açılışında /api/config çağrılarak öğrenilir (bkz. serverConfig).
-  var serverConfig = { requiresAccessCode: false, gemini: false, fal: false, openai: false, youcam: false };
-  var STORAGE_ACCESS_CODE = "nirvana_app_access_code";
-  function getAccessCode(){
-    try { return localStorage.getItem(STORAGE_ACCESS_CODE) || ""; } catch(e){ return ""; }
-  }
-  function apiHeaders(){
-    var h = { "Content-Type": "application/json" };
-    var code = getAccessCode();
-    if (code) h["x-app-code"] = code;
-    return h;
-  }
-  async function fetchServerConfig(){
-    try {
-      var res = await fetch("/api/config", { cache: "no-store" });
-      if (res.ok) serverConfig = await res.json();
-    } catch(e){ /* sunucuya hiç ulaşılamıyorsa varsayılanlarla devam edilir */ }
-    return serverConfig;
-  }
+  // Bu bilgisayara özel: Google AI Studio API anahtarı burada sabit olarak
+  // tutuluyor, böylece kullanıcı her açılışta tekrar girmek zorunda kalmıyor.
+  // Bu dosyayı başka biriyle paylaşırsanız anahtarınızı da paylaşmış olursunuz.
+  var EMBEDDED_API_KEY = "AQ.Ab8RN6IXshUAcmLBarld5sgjIC3ohNvax_7e8N2rNZtI_EVYXQ";
 
   var CATEGORIES = [
     { key:"sac_ekimi", name:"Saç Ekimi", desc:"Saç çıkışı / dolgunluk simülasyonu",
@@ -498,12 +357,12 @@
       prompt:"Simulate the realistic visual effect of subtle dermal filler on this photo: gently refine and add natural volume to the lips and/or cheeks as appropriate, and soften nasolabial folds if visible. {intensity} Keep it natural, not exaggerated, overfilled or plastic-looking. Keep identity, skin tone, hairstyle, background and lighting unchanged." },
     { key:"kalici_makyaj", name:"Kalıcı Makyaj", desc:"Kaş, göz kalemi, dudak renklendirme simülasyonu",
       prompt:"Simulate the realistic visual effect of permanent makeup on this photo: add natural, well-defined and evenly shaped eyebrows suited to the face, subtle eyeliner definition along the lash line, and a soft lip blush/tint that enhances the natural lip color. {intensity} Keep the face, skin, hairstyle, background and lighting unchanged, and keep the result natural-looking, not overdone or artificial." },
-    { key:"zayiflama", name:"Zayıflama / Vücut", desc:"Kilo verme, vücut kontürü — ⚠️ bel/kalçanın göründüğü tam boy (veya en az bel hizasına kadar) bir fotoğraf gerekir, yakın plan baş fotoğrafında görünür sonuç vermez",
-      special:"zayiflama" },
+    { key:"zayiflama", name:"Zayıflama / Vücut", desc:"Kilo verme, vücut kontürü",
+      prompt:"Simulate the realistic visual effect of moderate weight loss and body contouring on this photo: slim the visible body silhouette naturally and proportionally, especially around the waist/midsection. {intensity} Keep the face, clothing style, pose, background and lighting unchanged, and keep the result realistic and anatomically natural, not exaggerated." },
     { key:"gulus", name:"Gülüş Tasarımı", desc:"Diş beyazlatma / gülüş simülasyonu",
       prompt:"Simulate the realistic visual effect of a smile makeover on this photo: make the visible teeth whiter and more evenly aligned when the person is smiling. {intensity} Keep the face, lips shape, skin, background and lighting unchanged, and keep it natural-looking." },
-    { key:"uzman_onerisi", name:"Uzman Önerisi", desc:"AI, botoks/dolgu/kalıcı makyaj/zayıflama/gülüş tasarımından bu fotoğrafa en uygun olanları kendisi seçip uygular",
-      prompt:"You are an experienced aesthetic consultant. Carefully analyze this specific photo and independently decide which of the following categories of enhancement would most naturally and tastefully benefit THIS person, applying ONLY the ones that make sense for this photo — do not force all of them, and do not overdo any single one: (1) subtle Botox-style smoothing of visible wrinkles or expression lines, (2) natural lip and/or cheek dermal filler, (3) permanent makeup such as well-defined eyebrows, subtle eyeliner or a soft lip tint, (4) moderate, natural body slimming/contouring if relevant and visible in the photo, (5) a smile makeover with whiter, more even-looking teeth. {intensity} Keep identity, pose, background, lighting and clothing unchanged, and keep every change realistic, tasteful and true to this specific photo. This is a cosmetic sales preview meant to suggest possibilities, not a medical claim or diagnosis." },
+    { key:"sac_boya", name:"Saç Rengi / Kesimi", desc:"Renk veya kesim önizlemesi",
+      prompt:"Simulate a realistic new hairstyle/hair color on this photo as described by the stylist. {intensity} Keep the face, skin, background, lighting and clothing unchanged, and keep the hair texture physically plausible." },
     { key:"serbest", name:"Serbest / Diğer", desc:"Kendi açıklamanızı yazın", prompt:null }
   ];
 
@@ -513,31 +372,6 @@
     3: "Apply a pronounced, strong version of this change, while still looking physically plausible."
   };
   var INTENSITY_LABELS = { 1:"Hafif", 2:"Orta", 3:"Belirgin" };
-
-  // Zayıflama/Vücut kategorisi: Bu, hassas bir denge. Önceki (çok vurgulu/ısrarcı)
-  // sürüm zaman zaman güvenlik filtresine takılıyordu ("blocked due to safety
-  // violations"). Sonra bunu çok fazla yumuşattık ("gently refine", "very subtle")
-  // ve bu sefer model isteği kabul etti AMA görünür bir değişiklik üretmedi (önce/
-  // sonra neredeyse aynı çıktı) — modeller çok "nazik" bir talimatı bazen gerçek
-  // bir değişiklik yapmadan "başarılı" sayabiliyor. Burada ortada bir nokta
-  // deneniyor: "visibly" (görünür şekilde) kelimesi gibi netlik veren ama
-  // "the difference should be easy to see when comparing side by side, not a
-  // subtle or barely-there change" gibi ısrarcı/karşılaştırmalı olmayan ifadeler
-  // kullanılıyor. Bu da garanti değil — hâlâ deneme yanılma gerekebilir; sonuç
-  // yine görünmezse intensity'yi yükseltin veya bana tam olarak "hata var mı,
-  // yoksa görsel değişmiyor mu" bilgisini verin.
-  var WEIGHT_INTENSITY_TEXT = {
-    1: "Make the change lightly visible — a modest but noticeable slimming, not a dramatic one.",
-    2: "Make the change clearly visible — a moderate, unmistakable slimming while still looking natural.",
-    3: "Make the change strongly visible — a pronounced slimming, while still looking physically plausible."
-  };
-  var ZAYIFLAMA_PROMPT = "Create a tasteful, photorealistic preview image for a non-surgical body contouring consultation, of the " +
-    "kind used in aesthetic clinics. Reshape the waist and midsection area so the silhouette looks visibly slimmer and smoother " +
-    "than in the original photo — this is the whole point of the preview, so the change must actually be visible, not merely " +
-    "implied. {intensity} Let the existing clothing naturally drape over the new silhouette (same clothing item, style, color and " +
-    "pose). Keep the person's face, identity, hairstyle, background and lighting unchanged, and keep the overall look realistic " +
-    "and natural. This is a professional cosmetic " +
-    "consultation preview, not a medical guarantee.";
 
   // Botoks: bölge bazlı, her bölge için ayrı 1-5 manuel şiddet ayarı
   var BOTOX_ZONES = [
@@ -598,7 +432,6 @@
         }
         $("customPromptField").hidden = state.selectedCategories.indexOf("serbest") === -1;
         $("botoxZonesField").hidden = state.selectedCategories.indexOf("botoks") === -1;
-        $("zayiflamaPhotoWarning").hidden = state.selectedCategories.indexOf("zayiflama") === -1;
       });
     });
 
@@ -686,39 +519,6 @@
     });
   });
 
-  // ---------- görsel benzerlik kontrolü ----------
-  // Bazı sağlayıcılar/modeller hata vermeden "başarılı" döner ama görseli fiilen
-  // hiç değiştirmez (özellikle Zayıflama/Vücut kategorisinde görülüyor — model
-  // isteği sessizce görmezden geliyor). Bunu yakalamak için önce/sonra görsellerini
-  // küçük bir tuvale çizip ortalama piksel farkını ölçüyoruz. Fark çok düşükse
-  // (~%1.5 altı) "görünür değişiklik yok" kabul edip bir sonraki sağlayıcıyı
-  // deniyoruz — böylece sessiz/yumuşak "hayır" durumları da otomatik yakalanır.
-  function loadImageEl(dataUrl){
-    return new Promise(function(resolve, reject){
-      var img = new Image();
-      img.onload = function(){ resolve(img); };
-      img.onerror = function(){ reject(new Error("benzerlik kontrolü için görsel yüklenemedi")); };
-      img.src = dataUrl;
-    });
-  }
-  async function pixelDiffPercent(dataUrlA, dataUrlB){
-    var SIZE = 48;
-    var imgA = await loadImageEl(dataUrlA);
-    var imgB = await loadImageEl(dataUrlB);
-    var cA = document.createElement("canvas"); cA.width = SIZE; cA.height = SIZE;
-    var cB = document.createElement("canvas"); cB.width = SIZE; cB.height = SIZE;
-    cA.getContext("2d").drawImage(imgA, 0, 0, SIZE, SIZE);
-    cB.getContext("2d").drawImage(imgB, 0, 0, SIZE, SIZE);
-    var dA = cA.getContext("2d").getImageData(0,0,SIZE,SIZE).data;
-    var dB = cB.getContext("2d").getImageData(0,0,SIZE,SIZE).data;
-    var total = 0, n = 0;
-    for (var i=0;i<dA.length;i+=4){
-      total += Math.abs(dA[i]-dB[i]) + Math.abs(dA[i+1]-dB[i+1]) + Math.abs(dA[i+2]-dB[i+2]);
-      n += 3;
-    }
-    return (total / n) / 255 * 100; // ortalama fark, yüzde
-  }
-
   // ---------- watermark ----------
   function addWatermark(dataUrl, cb){
     var img = new Image();
@@ -740,61 +540,117 @@
     img.src = dataUrl;
   }
 
-  // ---------- sunucu üzerinden görsel üretimi ----------
-  // Aşağıdaki üç fonksiyon artık Gemini/fal.ai/OpenAI'a DOĞRUDAN bağlanmıyor —
-  // hepsi kendi sunucumuzdaki (/api/...) uçlara istek atıyor, anahtarlar orada
-  // kalıyor. Bu aynı zamanda önceki "Failed to fetch" sorununun kök nedenini de
-  // ortadan kaldırıyor: tarayıcı artık sadece KENDİ sunucumuza (aynı köken,
-  // normal HTTPS) konuşuyor; klinik bilgisayarındaki antivirüs/eklenti gibi
-  // üçüncü taraf engelleri artık devreye girmiyor. Asıl Gemini/fal/OpenAI
-  // çağrıları sunucuda (normal bir bulut ağında) yapılıyor.
-  async function callBackend(path, body){
-    var res, json;
+  // ---------- robust response image extractor ----------
+  function findImageInResponse(obj){
+    var found = null;
+    function walk(node){
+      if (found || !node || typeof node !== "object") return;
+      if (Array.isArray(node)){
+        for (var i=0;i<node.length && !found;i++) walk(node[i]);
+        return;
+      }
+      var mime = node.mime_type || node.mimeType;
+      var data = node.data;
+      if (mime && typeof mime === "string" && mime.indexOf("image/") === 0 && typeof data === "string" && data.length > 100){
+        found = { mime:mime, data:data };
+        return;
+      }
+      // legacy inlineData shape
+      if (node.inlineData && node.inlineData.data){
+        found = { mime: node.inlineData.mimeType || "image/png", data: node.inlineData.data };
+        return;
+      }
+      for (var k in node){
+        if (found) break;
+        if (Object.prototype.hasOwnProperty.call(node,k)) walk(node[k]);
+      }
+    }
+    walk(obj);
+    return found;
+  }
+
+  // ---------- API call ----------
+  // Google'ın yeni "Interactions API"si tarayıcıdan çağrıldığında bazı özel
+  // başlıklar (header) yüzünden CORS ön-uçuşunda (preflight) reddedilebiliyor ve
+  // fetch() hiç yanıt almadan "Failed to fetch" ile patlıyor. Bunu önlemek için:
+  //  - anahtarı her zaman URL sorgu parametresi olarak gönderiyoruz (özel header yok),
+  //  - önce tarayıcıdan çağrıldığında sorunsuz çalıştığı bilinen eski/klasik
+  //    "generateContent" uç noktasını deniyoruz,
+  //  - ağ/CORS hatası dahil HER durumda bir sonraki denemeye geçiyoruz (asla
+  //    erken çıkmıyoruz), böylece tek bir uç nokta değişse bile araç çalışmaya devam eder.
+  async function safeJsonFetch(url, opts){
     try {
-      res = await fetch(path, { method: "POST", headers: apiHeaders(), body: JSON.stringify(body) });
-      json = await res.json().catch(function(){ return null; });
+      var res = await fetch(url, opts);
+      var json = await res.json().catch(function(){ return null; });
+      var apiErr = json && json.error && json.error.message;
+      return { ok: res.ok && !!json, status: res.status, json: json,
+        summary: "HTTP " + res.status + (apiErr ? " – " + apiErr : "") };
     } catch (networkErr){
-      throw new Error("sunucuya ulaşılamadı: " + networkErr.message);
+      return { ok:false, status:0, json:null, summary:"ağ/CORS hatası: " + networkErr.message };
     }
-    if (!res.ok || !json || json.error){
-      throw new Error((json && json.error) || ("sunucu HTTP " + res.status));
+  }
+
+  async function callGeminiEdit(apiKey, model, promptText, beforeDataUrl){
+    var base64 = beforeDataUrl.split(",")[1];
+    var mimeMatch = /^data:([^;]+);/.exec(beforeDataUrl);
+    var mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+    var attempts = [];
+
+    // 1) Klasik generateContent uç noktası (tarayıcıdan güvenilir şekilde çalışır)
+    var legacyBody = {
+      contents: [{
+        parts: [
+          { text: promptText },
+          { inline_data: { mime_type: mime, data: base64 } }
+        ]
+      }]
+    };
+    var r1 = await safeJsonFetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(model)+":generateContent?key="+encodeURIComponent(apiKey),
+      { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(legacyBody) }
+    );
+    attempts.push("generateContent → " + r1.summary);
+    if (r1.ok){
+      var img1 = findImageInResponse(r1.json);
+      if (img1) return img1;
+      attempts[attempts.length-1] += " (yanıtta görsel bulunamadı)";
     }
-    return json; // { mime, data }
-  }
 
-  async function callGeminiEdit(model, promptText, beforeDataUrl){
-    return callBackend("/api/gemini/generate", { model: model, promptText: promptText, beforeDataUrl: beforeDataUrl });
-  }
+    // 2) Yedek: yeni Interactions API (anahtar query param'da, özel header yok)
+    var interBody = {
+      model: model,
+      input: [
+        { type:"image", mime_type: mime, data: base64 },
+        { type:"text", text: promptText }
+      ]
+    };
+    var r2 = await safeJsonFetch(
+      "https://generativelanguage.googleapis.com/v1beta/interactions?key="+encodeURIComponent(apiKey),
+      { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(interBody) }
+    );
+    attempts.push("interactions → " + r2.summary);
+    if (r2.ok){
+      var img2 = findImageInResponse(r2.json);
+      if (img2) return img2;
+      attempts[attempts.length-1] += " (yanıtta görsel bulunamadı)";
+    }
 
-  async function callFalKontextEdit(promptText, beforeDataUrl){
-    return callBackend("/api/fal/generate", { promptText: promptText, beforeDataUrl: beforeDataUrl });
-  }
-
-  async function callOpenAIEdit(promptText, beforeDataUrl){
-    return callBackend("/api/openai/generate", { promptText: promptText, beforeDataUrl: beforeDataUrl });
+    throw new Error(attempts.join("  |  "));
   }
 
   // ---------- generate ----------
   $("generateBtn").addEventListener("click", async function(){
     clearError();
-    // API anahtarları artık sunucuda; burada sadece sunucunun erişim kodu (varsa)
-    // ve hangi sağlayıcıların aktif olduğu (serverConfig) kullanılıyor.
+    var apiKey = EMBEDDED_API_KEY || $("apiKey").value.trim();
     var model = $("modelSelect").value;
     var customerName = $("custName").value.trim();
     var intensity = $("intensity").value;
     var cats = CATEGORIES.filter(function(c){ return state.selectedCategories.indexOf(c.key) !== -1; });
 
-    if (serverConfig.requiresAccessCode && !getAccessCode()){
-      showError("Bu sunucu bir erişim kodu istiyor. Lütfen Ayarlar'dan şube erişim kodunu girin.");
-      return;
-    }
-    if (!serverConfig.gemini && !serverConfig.fal && !serverConfig.openai){
-      showError("Sunucuda hiçbir AI sağlayıcısı yapılandırılmamış (GEMINI_API_KEY / FAL_KEY / OPENAI_API_KEY). Lütfen yöneticinizle iletişime geçin.");
-      return;
-    }
+    if (!apiKey){ showError("Lütfen önce API anahtarınızı girin."); return; }
     if (!state.beforeDataUrl){ showError("Lütfen önce fotoğrafı yükleyin."); return; }
     if (!cats.length){ showError("Lütfen en az bir işlem kategorisi seçin."); return; }
-    if (!$("consentBox").checked){ showError("Devam etmeden önce müşteri onaxı kutusunu işaretleyin."); return; }
+    if (!$("consentBox").checked){ showError("Devam etmeden önce müşteri onayı kutusunu işaretleyin."); return; }
 
     var customText = $("customPrompt").value.trim();
     if (cats.some(function(c){ return c.key === "serbest"; }) && !customText){
@@ -805,7 +661,7 @@
     if (cats.some(function(c){ return c.key === "botoks"; }) && !botoxZoneKeys.length){
       showError("Botoks için en az bir bölge işaretleyip şiddetini ayarlayın.");
       return;
-   }
+    }
 
     var intensityText = INTENSITY_TEXT[intensity] || "";
 
@@ -823,7 +679,6 @@
     function buildCategoryLine(c){
       if (c.key === "serbest") return customText + " " + intensityText;
       if (c.key === "botoks") return buildBotoxInstruction();
-      if (c.key === "zayiflama") return ZAYIFLAMA_PROMPT.replace("{intensity}", WEIGHT_INTENSITY_TEXT[intensity] || "");
       return (c.prompt || "").replace("{intensity}", intensityText);
     }
 
@@ -845,108 +700,8 @@
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span>Üretiliyor…';
 
-    // Bir model güvenlik filtresine takılırsa (özellikle Zayıflama/Vücut kategorisinde
-    // sık görülüyor), sırayla: (1) modelSelect'teki DİĞER Gemini modeli, (2) Ayarlar'da
-    // bir fal.ai anahtarı girilmişse FLUX Kontext, (3) bir OpenAI anahtarı girilmişse
-    // OpenAI'nin images/edits API'si denenir. Hiçbiri istem/içerik gizlemiyor, sadece
-    // hangi sağlayıcı/modelin yanıtladığı değişiyor — her adım kullanıcının Ayarlar'dan
-    // zaten seçebildiği bir seçenek.
-    var allModels = Array.prototype.map.call($("modelSelect").options, function(o){ return o.value; });
-    var altModel = allModels.filter(function(m){ return m !== model; })[0];
-    // Denenecek sağlayıcılar sırayla: (1) seçili Gemini modeli, (2) diğer Gemini
-    // modeli, (3) fal.ai (sunucuda ayarlıysa), (4) OpenAI (sunucuda ayarlıysa).
-    // Her biri için: önce API çağrılır, BAŞARILI dönse bile görsel önce/sonra
-    // piksel farkı ölçülür — fark çok düşükse (model sessizce hiçbir şey
-    // değiştirmemişse) o da "başarısız" sayılır ve bir sonraki sağlayıcı denenir.
-    // Zayıflama/Vücut dışındaki kategorilerde ("Hafif" yoğunluk gibi bilerek küçük
-    // bir değişiklik istenen durumlar olabileceğinden) bu kontrol uygulanmaz.
-    var NO_CHANGE_THRESHOLD = 1.5; // % — bunun altı "görünür değişiklik yok" sayılır
-    var checkForNoChange = cats.some(function(c){ return c.key === "zayiflama"; });
-
-    var geminiAttempts = serverConfig.gemini ? [
-      { label: "Gemini (" + model + ")", run: function(){ return callGeminiEdit(model, promptText, state.beforeDataUrl); } },
-      altModel ? { label: "Gemini (" + altModel + ")", run: function(){ return callGeminiEdit(altModel, promptText, state.beforeDataUrl); } } : null
-    ].filter(Boolean) : [];
-    var falAttempt = serverConfig.fal ? { label: "fal.ai (FLUX Kontext)", run: function(){ return callFalKontextEdit(promptText, state.beforeDataUrl); } } : null;
-    var openaiAttempt = serverConfig.openai ? { label: "OpenAI (gpt-image-1)", run: function(){ return callOpenAIEdit(promptText, state.beforeDataUrl); } } : null;
-
-    // Zayıflama/Vücut kategorisinde Gemini'nin görseli hiç değiştirmediği (sessiz
-    // ret) tekrar tekrar doğrulandı — bu kategori için artık Gemini'yi hiç
-    // denemiyoruz, doğrudan fal.ai (ardından OpenAI) kullanılıyor. Zaman
-    // kazandırır ve Gemini'nin işe yaramayan "başarılı" yanıtını beklemeyiz.
-    // Diğer kategorilerde (botoks, dolgu, vb.) Gemini önceliğini koruyor.
-    var nonGeminiAttempts = [falAttempt, openaiAttempt].filter(Boolean);
-    // fal.ai bazı ağlarda kendi başına "Failed to fetch" ile başarısız olabiliyor
-    // (bkz. build v12 sonrası gözlem) — bu yüzden Gemini'yi tamamen listeden atmak
-    // yerine, fal.ai/OpenAI'ı önce deniyoruz ama Gemini'yi yine de son çare olarak
-    // listede tutuyoruz. Gemini "başarılı" dönse bile görünür değişiklik yapmazsa
-    // aşağıdaki fark kontrolü onu eler; ama en azından ağ hatası tek başına bizi
-    // resim üretmeden bırakmaz.
-    var attempts = (checkForNoChange
-      ? nonGeminiAttempts.concat(geminiAttempts)
-      : geminiAttempts.concat(nonGeminiAttempts)
-    );
-
     try {
-      var imgResult = null;
-      var providerUsed = "";
-      var errorChain = [];
-      var noChangeChain = [];
-      var fallbackNoChangeResult = null; // hiçbiri değişmezse en azından bir görsel gösterelim
-      var fallbackNoChangeProvider = "";
-
-      for (var ai = 0; ai < attempts.length; ai++){
-        var attempt = attempts[ai];
-        var candidate;
-        try {
-          candidate = await attempt.run();
-        } catch (attemptErr) {
-          errorChain.push("[" + attempt.label + "] " + attemptErr.message);
-          // Sebebi ne olursa olsun (safety, ağ/CORS hatası, geçersiz anahtar vb.)
-          // her zaman bir SONRAKİ sağlayıcıyı dene — farklı sağlayıcılar farklı
-          // sunuculara/anahtarlara bağlandığı için birinde ağ sorunu olması
-          // diğerinin de başarısız olacağı anlamına gelmez. Sadece hiçbiri
-          // çalışmazsa (döngü bitince) gerçek bir hata gösteriyoruz.
-          continue;
-        }
-
-        if (checkForNoChange){
-          var candidateDataUrl = "data:" + candidate.mime + ";base64," + candidate.data;
-          var diffPct;
-          try {
-            diffPct = await pixelDiffPercent(state.beforeDataUrl, candidateDataUrl);
-          } catch (diffErr){
-            diffPct = 100; // ölçülemezse engelleme, görseli kabul et
-          }
-          if (diffPct < NO_CHANGE_THRESHOLD){
-            noChangeChain.push("[" + attempt.label + "] görünür değişiklik yok (fark ~%" + diffPct.toFixed(2) + ")");
-            if (!fallbackNoChangeResult){ fallbackNoChangeResult = candidate; fallbackNoChangeProvider = attempt.label; }
-            continue; // bir sonraki sağlayıcıyı dene
-          }
-        }
-
-        imgResult = candidate;
-        providerUsed = attempt.label;
-        break;
-      }
-
-      if (!imgResult){
-        if (fallbackNoChangeResult){
-          // Hiçbir sağlayıcı görünür bir değişiklik yapmadı — yine de üretilen son
-          // görseli göster ama kullanıcıyı açıkça uyar, sessizce "başarılı" gibi davranma.
-          imgResult = fallbackNoChangeResult;
-          providerUsed = fallbackNoChangeProvider + " ⚠️ görünür değişiklik yok";
-          showError("Uyarı: Denenen sağlayıcılardan bazıları (" + attempts.map(function(a){return a.label;}).join(", ") +
-            ") görsel döndürdü ama hiçbiri gövde/vücutta görünür bir değişiklik yapmadı; bazıları da hata verdi. " +
-            "Bu muhtemelen sağlayıcıların gerçek bir kişinin vücudunu belirgin şekilde değiştirmeyi kasıtlı olarak " +
-            "sınırlaması (sessiz/yumuşak ret) veya içerik güvenliği filtresi. Aşağıdaki görsel yine de gösteriliyor ama " +
-            "fark çok küçük olabilir. Teknik ayrıntı: " +
-            noChangeChain.concat(errorChain).join("  |  "));
-        } else {
-          throw new Error(errorChain.concat(noChangeChain).join("  |  "));
-        }
-      }
-
+      var imgResult = await callGeminiEdit(apiKey, model, promptText, state.beforeDataUrl);
       var afterRaw = "data:" + imgResult.mime + ";base64," + imgResult.data;
       addWatermark(afterRaw, function(watermarked){
         state.lastResult = {
@@ -957,37 +712,15 @@
           customerName: customerName || "İsimsiz",
           intensity: intensity,
           note: customText,
-          provider: providerUsed,
           createdAt: Date.now()
         };
         $("resBefore").src = state.lastResult.beforeDataUrl;
         $("resAfter").src = state.lastResult.afterDataUrl;
-        $("resProviderNote").textContent = "Üreten: " + providerUsed;
         $("resultWrap").hidden = false;
         $("resultWrap").scrollIntoView({behavior:"smooth", block:"start"});
       });
     } catch(err){
-      var isSafetyBlock = /safety|nsfw|flagged|content polic|moderat|görsel bulunamadı|görünür değişiklik yok/i.test(err.message);
-      var hasZayiflama = cats.some(function(c){ return c.key === "zayiflama"; });
-      var falTried = /\[fal\.ai\]/.test(err.message);
-      var openaiTried = /\[OpenAI\]/.test(err.message);
-      var triedList = ["Gemini"].concat(falTried ? ["fal.ai"] : []).concat(openaiTried ? ["OpenAI"] : []);
-      var missingSuggestions = [];
-      if (!falTried) missingSuggestions.push("Yöneticinizden sunucuya bir FAL_KEY tanımlamasını isteyin (en kolay/en olası çözüm)");
-      if (!openaiTried) missingSuggestions.push("Yöneticinizden sunucuya bir OPENAI_API_KEY tanımlamasını isteyin");
-      if (isSafetyBlock && hasZayiflama){
-        showError("\"Zayıflama/Vücut\" kategorisi bu fotoğraf/istek için reddedildi — denenen " + triedList.join(" + ") +
-          " sağlayıcı(lar)ının tümü güvenlik/içerik politikası gereği görsel üretmeyi reddetti (kodda bir hata değil). " +
-          "Denenebilecekler: (1) Yoğunluğu \"Hafif\"e çekin, (2) bu kategoriyi diğerleriyle birleştirmeden tek başına deneyin, " +
-          "(3) farklı bir fotoğrafla tekrar deneyin" +
-          (missingSuggestions.length ? ", (4) " + missingSuggestions.join(", (5) ") : "") +
-          ". Teknik ayrıntı: " + err.message);
-      } else if (isSafetyBlock){
-        showError("Görsel üretilemedi: seçilen işlem(ler) için güvenlik politikası gereği görsel üretmeyi reddetti " +
-          "(kodda bir hata değil). Farklı bir fotoğraf veya daha düşük yoğunlukla tekrar deneyin. Teknik ayrıntı: " + err.message);
-      } else {
-        showError("Görsel üretilemedi: " + err.message + " — internet bağlantınızı ve (varsa) şube erişim kodunuzu kontrol edin. Sorun devam ederse Ayarlar'daki \"Bağlantı Testi Yap\" ile sunucunun AI servislerine ulaşıp ulaşamadığını kontrol edin ya da yöneticinize başvurun.");
-      }
+      showError("Görsel üretilemedi: " + err.message + " — API anahtarınızı, model adını ve internet bağlantınızı kontrol edin.");
     } finally {
       btn.disabled = false;
       btn.textContent = "Simülasyon Oluştur";
@@ -1120,14 +853,15 @@
   // ---------- API anahtarını bu bilgisayarda hatırlama ----------
   // Bu dosya artık kendi bilgisayarınızda, kendi tarayıcınızda (localhost
   // üzerinden) çalıştığı için tarayıcı hafızasını güvenle kullanabiliriz.
+  var STORAGE_KEY = "nirvana_gemini_api_key";
   var STORAGE_MODEL = "nirvana_gemini_model";
 
   function loadSavedSettings(){
     try {
-      var savedCode = localStorage.getItem(STORAGE_ACCESS_CODE);
-      if (savedCode){
-        $("accessCode").value = savedCode;
-        $("accessCodeSavedNote").hidden = false;
+      var savedKey = localStorage.getItem(STORAGE_KEY);
+      if (savedKey){
+        $("apiKey").value = savedKey;
+        $("keySavedNote").hidden = false;
       }
       var savedModel = localStorage.getItem(STORAGE_MODEL);
       if (savedModel){
@@ -1137,123 +871,53 @@
     } catch(e){ /* localStorage kapalıysa sessizce yok say */ }
   }
 
-  function saveAccessCodeIfPresent(){
+  function saveKeyIfPresent(){
     try {
-      var val = $("accessCode").value.trim();
+      var val = $("apiKey").value.trim();
       if (val){
-        localStorage.setItem(STORAGE_ACCESS_CODE, val);
-        $("accessCodeSavedNote").hidden = false;
+        localStorage.setItem(STORAGE_KEY, val);
+        $("keySavedNote").hidden = false;
       } else {
-        localStorage.removeItem(STORAGE_ACCESS_CODE);
-        $("accessCodeSavedNote").hidden = true;
+        localStorage.removeItem(STORAGE_KEY);
+        $("keySavedNote").hidden = true;
       }
-      renderAutoConnectNotice();
     } catch(e){ /* yoksay */ }
   }
 
-  $("accessCode").addEventListener("change", saveAccessCodeIfPresent);
-  $("accessCode").addEventListener("blur", saveAccessCodeIfPresent);
+  $("apiKey").addEventListener("change", saveKeyIfPresent);
+  $("apiKey").addEventListener("blur", saveKeyIfPresent);
   $("modelSelect").addEventListener("change", function(){
     try { localStorage.setItem(STORAGE_MODEL, this.value); } catch(e){}
   });
-  $("forgetAccessCodeBtn").addEventListener("click", function(){
-    try { localStorage.removeItem(STORAGE_ACCESS_CODE); } catch(e){}
-    $("accessCode").value = "";
-    $("accessCodeSavedNote").hidden = true;
-    renderAutoConnectNotice();
+  $("forgetKeyBtn").addEventListener("click", function(){
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
+    $("apiKey").value = "";
+    $("keySavedNote").hidden = true;
   });
 
-  // Sunucudan hangi sağlayıcıların aktif olduğunu gösteren salt-okunur liste.
-  function renderProviderStatusList(){
-    var el = $("providerStatusList");
-    if (!el) return;
-    var rows = [
-      ["Gemini", serverConfig.gemini],
-      ["fal.ai", serverConfig.fal],
-      ["OpenAI", serverConfig.openai],
-      ["YouCam", serverConfig.youcam]
-    ];
-    el.textContent = rows.map(function(r){ return (r[1] ? "✅ " : "⬜ ") + r[0]; }).join("   ");
-  }
-
-  // Erişim kodu gerekiyorsa ve girilmemişse uyarı göster; aksi halde normal
-  // "sunucuya bağlı" notunu göster. Ayar panelinin ilk açılıp açılmayacağını da
-  // buna göre belirliyoruz.
-  function renderAutoConnectNotice(){
-    var needsCode = serverConfig.requiresAccessCode && !getAccessCode();
-    $("accessCodeNeededNotice").hidden = !needsCode;
-    $("autoConnectedNotice").hidden = needsCode;
-    $("settingsPanel").hidden = !needsCode; // koda ihtiyaç varsa panel açık başlasın
-  }
-  function showSettings(e){
-    if (e) e.preventDefault();
-    $("settingsPanel").hidden = false;
-    $("settingsPanel").scrollIntoView({behavior:"smooth"});
-  }
-  $("showSettingsLink").addEventListener("click", showSettings);
-  var showSettingsLinkFromWarnEl = $("showSettingsLinkFromWarn");
-  if (showSettingsLinkFromWarnEl) showSettingsLinkFromWarnEl.addEventListener("click", showSettings);
-
-  // ---------- file:// uyarısı ----------
-  function checkFileProtocol(){
-    var warn = $("fileProtocolWarning");
-    if (!warn) return;
-    if (location.protocol === "file:"){
-      warn.hidden = false;
-      var codeEl = $("curProtoUrl");
-      if (codeEl) codeEl.textContent = location.href.slice(0, 70);
+  // Anahtar dosyaya gömülüyse ayar panelini gizle, sadece küçük bir bilgi
+  // notu göster; "Ayarları göster" ile istenirse yine de açılabilir.
+  function applyAutoConnectVisibility(){
+    if (EMBEDDED_API_KEY){
+      $("settingsPanel").hidden = true;
+      $("autoConnectedNotice").hidden = false;
     } else {
-      warn.hidden = true;
+      $("settingsPanel").hidden = false;
+      $("autoConnectedNotice").hidden = true;
     }
   }
-
-  // ---------- bağlantı testi ----------
-  // Artık tarayıcı değil, SUNUCU test ediyor (bkz. /api/selftest) — çünkü asıl
-  // Gemini/fal/OpenAI çağrıları da sunucudan yapılıyor. Bu, klinik bilgisayarındaki
-  // antivirüs/eklenti gibi etkenleri tamamen devre dışı bırakıyor.
-  function runConnectionTest(){
-    var out = $("connTestResults");
-    if (!out) return;
-    out.textContent = "Test ediliyor...";
-    fetch("/api/selftest", { headers: apiHeaders(), cache: "no-store" })
-      .then(function(res){ return res.json(); })
-      .then(function(data){
-        var rows = [
-          ["Gemini (generativelanguage.googleapis.com)", data.gemini],
-          ["fal.ai (queue.fal.run)", data.fal],
-          ["OpenAI (api.openai.com)", data.openai]
-        ];
-        var lines = rows.map(function(r){
-          var ok = r[1] && r[1].ok;
-          return (ok ? "✅ " : "❌ ") + r[0] + (ok ? " — sunucudan ulaşılabiliyor" : " — ULAŞILAMIYOR (" + (r[1] && r[1].detail ? r[1].detail : "bilinmeyen hata") + ")");
-        });
-        var failCount = rows.filter(function(r){ return !(r[1] && r[1].ok); }).length;
-        if (failCount === rows.length){
-          lines.push("", "Sunucu hiçbir AI sağlayıcısına ulaşamıyor — barındırma sağlayıcısının ağ/güvenlik duvarı ayarlarını kontrol edin.");
-        } else if (failCount > 0){
-          lines.push("", "Bazı sağlayıcılara sunucudan ulaşılamıyor — ilgili sağlayıcının o barındırma bölgesinde engelli olması mümkün.");
-        } else {
-          lines.push("", "Sunucudan tüm sağlayıcılara ulaşılabiliyor. Yine de hata alıyorsanız API anahtarlarını (sunucu ortam değişkenlerini) kontrol edin.");
-        }
-        out.textContent = lines.join("\n");
-      })
-      .catch(function(e){
-        out.textContent = "❌ Sunucuya hiç ulaşılamadı: " + (e && e.message ? e.message : e) + "\n\nSayfanın doğru adresten (sunucu URL'sinden) açıldığından emin olun.";
-      });
-  }
-  var connTestBtnEl = $("connTestBtn");
-  if (connTestBtnEl) connTestBtnEl.addEventListener("click", runConnectionTest);
+  $("showSettingsLink").addEventListener("click", function(e){
+    e.preventDefault();
+    $("settingsPanel").hidden = false;
+    $("settingsPanel").scrollIntoView({behavior:"smooth"});
+  });
 
   // ---------- init ----------
   renderCatGrid();
   renderBotoxZones();
   renderGallery();
   loadSavedSettings();
-  fetchServerConfig().then(function(){
-    renderProviderStatusList();
-    renderAutoConnectNotice();
-  });
-  checkFileProtocol();
+  applyAutoConnectVisibility();
 })();
 </script>
 
