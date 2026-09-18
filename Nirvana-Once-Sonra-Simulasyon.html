@@ -784,7 +784,7 @@
       body: JSON.stringify({ files: [{ content_type: mime, file_name: "once-fotografi.jpg", file_size: blob.size }] })
     });
     if (!fileRes.ok) throw new Error("YouCam: dosya yükleme adresi alınamadı — " + fileRes.summary);
-    var fileEntry = fileRes.json && fileRes.json.files && fileRes.json.files[0];
+    var fileEntry = fileRes.json && fileRes.json.data && fileRes.json.data.files && fileRes.json.data.files[0];
     var fileId = fileEntry && fileEntry.file_id;
     var uploadReq = fileEntry && fileEntry.requests && fileEntry.requests[0];
     if (!fileId || !uploadReq || !uploadReq.url){
