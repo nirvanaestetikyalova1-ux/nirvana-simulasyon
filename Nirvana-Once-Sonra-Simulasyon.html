@@ -707,7 +707,8 @@
             delegate: "GPU"
           },
           runningMode: "IMAGE",
-          numPoses: 1
+          numPoses: 1,
+          outputSegmentationMasks: true
         });
       })();
     }
@@ -732,7 +733,11 @@
 
   // Bir satırdaki pikselleri, cx merkezli ve R yarıçaplı bir bant içinde s oranında
   // içe doğru sıkıştırır (merkeze yakın en çok, bant kenarında hiç — dikişsiz geçiş).
-  function squeezeRow(srcRow, dstRow, width, cx, R, s){
+  // maskRow verilirse (MediaPipe'ın kişi/arka plan segmentasyon maskesi), her hedef
+  // piksel için "bu nokta gerçekten kişi mi?" diye bakar: kişi ise kaydırılmış (sıkıştırılmış)
+  // örneği kullanır, arka plansa pikseli olduğu yerde bırakır — böylece duvar kenarı,
+  // fayans çizgisi, raf gibi arka plan detayları asla eğilip bükülmez.
+  function squeezeRow(srcRow, dstRow, width, cx, R, s, maskRow){
     if (s <= 0 || R <= 1) { dstRow.set(srcRow); return; }
     for (var x=0; x<width; x++){
       var d = x - cx;
@@ -747,6 +752,21 @@
       }
       var sx = Math.max(0, Math.min(width-1, Math.round(srcX)));
       var so = sx*4, doOff = x*4;
+      if (maskRow){
+        var m = maskRow[x]; // bu SÜTUNUN orijinal kişi-olasılığı (0..1)
+        var so0 = x*4;
+        if (m <= 0.03){
+          dstRow[doOff]=srcRow[so0]; dstRow[doOff+1]=srcRow[so0+1]; dstRow[doOff+2]=srcRow[so0+2]; dstRow[doOff+3]=srcRow[so0+3];
+          continue;
+        }
+        if (m < 0.97){
+          dstRow[doOff]   = srcRow[so0]  *(1-m) + srcRow[so]  *m;
+          dstRow[doOff+1] = srcRow[so0+1]*(1-m) + srcRow[so+1]*m;
+          dstRow[doOff+2] = srcRow[so0+2]*(1-m) + srcRow[so+2]*m;
+          dstRow[doOff+3] = srcRow[so0+3]*(1-m) + srcRow[so+3]*m;
+          continue;
+        }
+      }
       dstRow[doOff]=srcRow[so]; dstRow[doOff+1]=srcRow[so+1]; dstRow[doOff+2]=srcRow[so+2]; dstRow[doOff+3]=srcRow[so+3];
     }
   }
@@ -768,6 +788,33 @@
     var lm = result.landmarks[0].map(function(p){ return { x: p.x*W, y: p.y*H }; });
     var L = { shoulder:lm[11], hip:lm[23], knee:lm[25], ankle:lm[27], elbow:lm[13], wrist:lm[15] };
     var R_ = { shoulder:lm[12], hip:lm[24], knee:lm[26], ankle:lm[28], elbow:lm[14], wrist:lm[16] };
+
+    // Kişi/arka plan segmentasyon maskesi: sıkıştırmanın duvar, fayans, raf gibi arka
+    // plan detaylarını eğip bükmesini engellemek için kullanılır (sadece gerçekten kişiye
+    // ait pikseller kaydırılır). Alınamazsa null kalır ve eski (maskesiz) davranışa döner.
+    var personMask = null;
+    try {
+      if (result.segmentationMasks && result.segmentationMasks.length){
+        var maskObj = result.segmentationMasks[0];
+        var maskArr = maskObj.getAsFloat32Array();
+        var maskW = maskObj.width, maskH = maskObj.height;
+        if (maskW === W && maskH === H){
+          personMask = maskArr;
+        } else {
+          personMask = new Float32Array(W*H);
+          for (var myy=0; myy<H; myy++){
+            var msy = Math.min(maskH-1, Math.floor(myy*maskH/H));
+            for (var mxx=0; mxx<W; mxx++){
+              var msx = Math.min(maskW-1, Math.floor(mxx*maskW/W));
+              personMask[myy*W+mxx] = maskArr[msy*maskW+msx];
+            }
+          }
+        }
+        if (maskObj.close) maskObj.close();
+      }
+    } catch(maskErr){
+      personMask = null;
+    }
 
     var dstCanvas = document.createElement("canvas");
     dstCanvas.width = W; dstCanvas.height = H;
@@ -792,10 +839,10 @@
     // rowDst'nin ANLIK halini kopyalayıp o kopyayı kaynak alarak sıkıştırma uygular —
     // böylece aynı satırda art arda uygulanan bantlar (gövde, sol/sağ bacak, sol/sağ
     // kol) birbirinin üzerine doğru şekilde birikir, önceki adımı silmez.
-    function applyOnRow(rowDst, W, cx, R, s){
+    function applyOnRow(rowDst, W, cx, R, s, maskRow){
       if (s <= 0) return;
       var snapshot = new Uint8ClampedArray(rowDst);
-      squeezeRow(snapshot, rowDst, W, cx, R, s);
+      squeezeRow(snapshot, rowDst, W, cx, R, s, maskRow);
     }
 
     // Bir bandın üst/alt sınırlarına yumuşak geçiş (feather) uygular: sınıra tam
@@ -822,6 +869,7 @@
       var rowSrc = src.subarray(srcOff, srcOff+W*4);
       var rowDst = dst.subarray(srcOff, srcOff+W*4);
       rowDst.set(rowSrc);
+      var maskRow = personMask ? personMask.subarray(y*W, y*W+W) : null;
 
       // gövde (bel/karın/kalça birlikte, tek merkez hattı üzerinden)
       if (torsoS > 0 && y >= torsoTop && y <= torsoBottom){
@@ -830,7 +878,7 @@
         var bandW = (shoulderW + (hipW-shoulderW)*t);
         var R = Math.max(14, bandW*0.95);
         var torsoMul = featherMul(y, torsoTop, torsoBottom, torsoFeather);
-        applyOnRow(rowDst, W, cx, R, torsoS*torsoMul);
+        applyOnRow(rowDst, W, cx, R, torsoS*torsoMul, maskRow);
       }
 
       // bacaklar (sol/sağ bacak, kendi hatları üzerinden ayrı ayrı — satır iki yarıya bölünür)
@@ -840,8 +888,8 @@
         var rx = y<=kneeY ? lerpPoint(R_.hip,R_.knee,tl).x : lerpPoint(R_.knee,R_.ankle,tl).x;
         var legR = Math.max(10, Math.abs(hipW)*0.42);
         var legMul = featherMul(y, hipY, legBottom, legFeather);
-        applyOnRow(rowDst, W, lx, legR, legS*legMul);
-        applyOnRow(rowDst, W, rx, legR, legS*legMul);
+        applyOnRow(rowDst, W, lx, legR, legS*legMul, maskRow);
+        applyOnRow(rowDst, W, rx, legR, legS*legMul, maskRow);
       }
 
       // kollar (omuz-dirsek-bilek hattı boyunca, sadece dış taraf) — omuz ucunda
@@ -854,8 +902,8 @@
         var rax = y<=elbowY ? lerpPoint(R_.shoulder,R_.elbow,ta).x : lerpPoint(R_.elbow,R_.wrist,ta).x;
         var armR = Math.max(8, shoulderW*0.22);
         var armMul = featherMul(y, shoulderY, wristY, armFeather);
-        applyOnRow(rowDst, W, lax, armR, armS*armMul);
-        applyOnRow(rowDst, W, rax, armR, armS*armMul);
+        applyOnRow(rowDst, W, lax, armR, armS*armMul, maskRow);
+        applyOnRow(rowDst, W, rax, armR, armS*armMul, maskRow);
       }
     }
 
