@@ -485,7 +485,7 @@
     { key:"kollar", name:"Kollar", phrase:"the upper arms, making them visibly slimmer", warp:"arms" },
     { key:"bacaklar", name:"Bacaklar", phrase:"the legs (thighs and calves), making them visibly slimmer", warp:"legs" },
     { key:"kalca", name:"Kalça", phrase:"the hips, making them slightly slimmer", warp:"torso" },
-    { key:"boyun", name:"Boyun / Çift Çene", phrase:"the neck and jaw area, reducing the appearance of a double chin for a firmer jawline" }
+    { key:"boyun", name:"Boyun / Çift Çene", phrase:"the neck and jaw area, reducing the appearance of a double chin for a firmer jawline", warp:"neck" }
   ];
   var BODY_LEVEL_TEXT = {
     1: "hafif", 2: "hafif-orta", 3: "orta", 4: "belirgin", 5: "maksimum"
@@ -788,6 +788,8 @@
     var lm = result.landmarks[0].map(function(p){ return { x: p.x*W, y: p.y*H }; });
     var L = { shoulder:lm[11], hip:lm[23], knee:lm[25], ankle:lm[27], elbow:lm[13], wrist:lm[15] };
     var R_ = { shoulder:lm[12], hip:lm[24], knee:lm[26], ankle:lm[28], elbow:lm[14], wrist:lm[16] };
+    var mouth = { l:lm[9], r:lm[10] };
+    var ears = { l:lm[7], r:lm[8] };
 
     // Kişi/arka plan segmentasyon maskesi: sıkıştırmanın duvar, fayans, raf gibi arka
     // plan detaylarını eğip bükmesini engellemek için kullanılır (sadece gerçekten kişiye
@@ -828,6 +830,8 @@
     );
     var legS = levelToSqueeze(bodyZoneLevels.bacaklar);
     var armS = levelToSqueeze(bodyZoneLevels.kollar);
+    // Boyun/çift çene yüze çok yakın bir alan olduğu için daha hafif bir oranla sıkıştırılır.
+    var neckS = levelToSqueeze(bodyZoneLevels.boyun) * 0.55;
 
     var shoulderY = (L.shoulder.y + R_.shoulder.y)/2, hipY = (L.hip.y + R_.hip.y)/2;
     var kneeY = (L.knee.y + R_.knee.y)/2, ankleY = (L.ankle.y + R_.ankle.y)/2;
@@ -835,6 +839,13 @@
     var torsoTop = shoulderY, torsoBottom = hipY + (hipY-shoulderY)*0.18;
     var legBottom = ankleY + (ankleY-kneeY)*0.15;
     var wristY = (L.wrist.y + R_.wrist.y)/2;
+
+    var mouthY = (mouth.l.y + mouth.r.y)/2;
+    var neckCenterX = (mouth.l.x + mouth.r.x)/2;
+    var earsW = Math.abs(ears.r.x - ears.l.x);
+    var neckTop = mouthY + (shoulderY-mouthY)*0.10;
+    var neckBottom = shoulderY;
+    var neckR = Math.max(6, earsW*0.42);
 
     // rowDst'nin ANLIK halini kopyalayıp o kopyayı kaynak alarak sıkıştırma uygular —
     // böylece aynı satırda art arda uygulanan bantlar (gövde, sol/sağ bacak, sol/sağ
@@ -863,6 +874,7 @@
     var torsoFeather = Math.max(4, (torsoBottom - torsoTop) * 0.14);
     var legFeather = Math.max(4, (legBottom - hipY) * 0.08);
     var armFeather = Math.max(4, (wristY - shoulderY) * 0.18);
+    var neckFeather = Math.max(3, (neckBottom - neckTop) * 0.25);
 
     for (var y=0; y<H; y++){
       var srcOff = y*W*4;
@@ -904,6 +916,13 @@
         var armMul = featherMul(y, shoulderY, wristY, armFeather);
         applyOnRow(rowDst, W, lax, armR, armS*armMul, maskRow);
         applyOnRow(rowDst, W, rax, armR, armS*armMul, maskRow);
+      }
+
+      // boyun / çift çene (ağız-omuz hattı arasında, tek merkez hattı üzerinden,
+      // gövde ile aynı segmentasyon maskesi korumasıyla — arka plan asla etkilenmez)
+      if (neckS > 0 && y >= neckTop && y <= neckBottom){
+        var neckMul = featherMul(y, neckTop, neckBottom, neckFeather);
+        applyOnRow(rowDst, W, neckCenterX, neckR, neckS*neckMul, maskRow);
       }
     }
 
