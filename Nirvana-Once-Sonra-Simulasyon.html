@@ -793,9 +793,29 @@
     // böylece aynı satırda art arda uygulanan bantlar (gövde, sol/sağ bacak, sol/sağ
     // kol) birbirinin üzerine doğru şekilde birikir, önceki adımı silmez.
     function applyOnRow(rowDst, W, cx, R, s){
+      if (s <= 0) return;
       var snapshot = new Uint8ClampedArray(rowDst);
       squeezeRow(snapshot, rowDst, W, cx, R, s);
     }
+
+    // Bir bandın üst/alt sınırlarına yumuşak geçiş (feather) uygular: sınıra tam
+    // yapışık satırlarda sıkıştırmayı aniden %100 uygulamak yerine, ilk/son birkaç
+    // satırda 0'dan 1'e/1'den 0'a kademeli artırır. Bu, örn. omuz hattında gövde
+    // bandı ile kol bandının aynı anda tam güçle çakışıp deri/arka planı birbirine
+    // karıştırdığı "kırık omuz" görünümünü engeller.
+    function featherMul(y, top, bottom, featherPx){
+      var span = bottom - top;
+      if (span <= 0) return 1;
+      var f = Math.min(featherPx, span/2);
+      if (f <= 0) return 1;
+      if (y < top + f) return Math.max(0, (y - top) / f);
+      if (y > bottom - f) return Math.max(0, (bottom - y) / f);
+      return 1;
+    }
+
+    var torsoFeather = Math.max(4, (torsoBottom - torsoTop) * 0.14);
+    var legFeather = Math.max(4, (legBottom - hipY) * 0.08);
+    var armFeather = Math.max(4, (wristY - shoulderY) * 0.18);
 
     for (var y=0; y<H; y++){
       var srcOff = y*W*4;
@@ -809,7 +829,8 @@
         var cx = shoulderY===hipY ? (L.shoulder.x+R_.shoulder.x)/2 : (L.shoulder.x + (L.hip.x-L.shoulder.x)*t + R_.shoulder.x + (R_.hip.x-R_.shoulder.x)*t)/2;
         var bandW = (shoulderW + (hipW-shoulderW)*t);
         var R = Math.max(14, bandW*0.95);
-        applyOnRow(rowDst, W, cx, R, torsoS);
+        var torsoMul = featherMul(y, torsoTop, torsoBottom, torsoFeather);
+        applyOnRow(rowDst, W, cx, R, torsoS*torsoMul);
       }
 
       // bacaklar (sol/sağ bacak, kendi hatları üzerinden ayrı ayrı — satır iki yarıya bölünür)
@@ -818,11 +839,13 @@
         var lx = y<=kneeY ? lerpPoint(L.hip,L.knee,tl).x : lerpPoint(L.knee,L.ankle,tl).x;
         var rx = y<=kneeY ? lerpPoint(R_.hip,R_.knee,tl).x : lerpPoint(R_.knee,R_.ankle,tl).x;
         var legR = Math.max(10, Math.abs(hipW)*0.42);
-        applyOnRow(rowDst, W, lx, legR, legS);
-        applyOnRow(rowDst, W, rx, legR, legS);
+        var legMul = featherMul(y, hipY, legBottom, legFeather);
+        applyOnRow(rowDst, W, lx, legR, legS*legMul);
+        applyOnRow(rowDst, W, rx, legR, legS*legMul);
       }
 
-      // kollar (omuz-dirsek-bilek hattı boyunca, sadece dış taraf)
+      // kollar (omuz-dirsek-bilek hattı boyunca, sadece dış taraf) — omuz ucunda
+      // (y=shoulderY) feather 0'dan başladığı için gövde bandıyla çakışma yumuşar.
       if (armS > 0 && y >= shoulderY && y <= wristY){
         var elbowY = (L.elbow.y+R_.elbow.y)/2;
         var ta = y<=elbowY ? (y-shoulderY)/Math.max(1,(elbowY-shoulderY)) : (y-elbowY)/Math.max(1,(wristY-elbowY));
@@ -830,8 +853,9 @@
         var lax = y<=elbowY ? lerpPoint(L.shoulder,L.elbow,ta).x : lerpPoint(L.elbow,L.wrist,ta).x;
         var rax = y<=elbowY ? lerpPoint(R_.shoulder,R_.elbow,ta).x : lerpPoint(R_.elbow,R_.wrist,ta).x;
         var armR = Math.max(8, shoulderW*0.22);
-        applyOnRow(rowDst, W, lax, armR, armS);
-        applyOnRow(rowDst, W, rax, armR, armS);
+        var armMul = featherMul(y, shoulderY, wristY, armFeather);
+        applyOnRow(rowDst, W, lax, armR, armS*armMul);
+        applyOnRow(rowDst, W, rax, armR, armS*armMul);
       }
     }
 
