@@ -1,0 +1,1688 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nirvana · Önce/Sonra Simülasyon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Karla:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#171008; --surface:#241a0e; --surface-2:#33230f; --surface-3:#4a3213;
+    --ink:#f8ecd8; --ink-soft:#d9c39c; --muted:#a68a5c; --line:#5a4420;
+    --accent:#f0b429; --accent-soft:rgba(240,180,41,.18); --accent-ink:#231702;
+    --sage:#e8c974; --sage-soft:rgba(232,201,116,.16); --danger:#ff7a6b; --danger-soft:rgba(255,122,107,.16);
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 8px 28px -10px rgba(240,180,41,.3);
+    --radius-s:8px; --radius-m:14px; --radius-l:20px;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+  body{
+    background:
+      radial-gradient(circle at 12% -6%, rgba(240,180,41,.18), transparent 46%),
+      radial-gradient(circle at 88% 8%, rgba(232,201,116,.10), transparent 44%),
+      var(--bg);
+    background-attachment:fixed;
+    color:var(--ink);
+    font-family:'Karla', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing:antialiased; min-height:100vh; padding:0 0 60px;
+  }
+  h1,h2,h3{ font-family:'Space Grotesk', system-ui, sans-serif; margin:0; font-weight:600; letter-spacing:-.01em; }
+  .mono{ font-family:'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; }
+  button{ font-family:inherit; }
+  img{ max-width:100%; }
+  [hidden]{ display:none !important; }
+  :focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  header.top{
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    padding:20px 26px; border-bottom:1px solid var(--line);
+    background:rgba(23,16,8,.78); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    position:sticky; top:0; z-index:5;
+    flex-wrap:wrap;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand-mark{
+    width:32px; height:32px; border-radius:50%; flex:none;
+    background:conic-gradient(from 200deg, var(--accent), var(--sage), var(--accent));
+    box-shadow:0 0 14px rgba(240,180,41,.6);
+  }
+  .brand h1{ font-size:1.2rem; color:var(--ink); }
+  .brand h1 em{ font-style:normal; color:var(--accent); }
+  .brand .tag{ display:block; font-size:.72rem; color:var(--muted); font-family:'IBM Plex Mono',monospace; margin-top:1px; letter-spacing:.02em; }
+  .top-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .btn-ghost{ background:transparent; border:1px solid var(--line); color:var(--ink-soft); border-radius:999px; padding:9px 15px; font-size:.82rem; cursor:pointer; font-weight:600; }
+  .btn-ghost:hover{ background:var(--surface-2); }
+  .btn-primary{ background:var(--accent); color:var(--accent-ink); border:none; border-radius:999px; padding:10px 18px; font-size:.86rem; font-weight:700; cursor:pointer; box-shadow:var(--shadow); }
+  .btn-primary:hover{ filter:brightness(1.05); }
+  .btn-primary:disabled{ opacity:.55; cursor:not-allowed; filter:none; }
+  .btn-primary-sm{ background:var(--accent); color:var(--accent-ink); border:none; border-radius:999px; padding:7px 13px; font-size:.76rem; font-weight:700; cursor:pointer; }
+  .btn-primary-sm:disabled{ opacity:.55; cursor:not-allowed; }
+  .btn-danger-sm{ background:transparent; border:1px solid var(--danger); color:var(--danger); border-radius:999px; padding:6px 12px; font-size:.76rem; cursor:pointer; font-weight:600; }
+
+  main{ max-width:1180px; margin:0 auto; padding:24px 26px 0; display:flex; flex-direction:column; gap:26px; }
+
+  .notice{
+    background:var(--accent-soft); border:1px solid var(--line); border-left:4px solid var(--accent);
+    border-radius:var(--radius-m); padding:14px 16px; font-size:.85rem; line-height:1.55; color:var(--ink-soft);
+  }
+  .notice strong{ color:var(--ink); }
+  .notice.warn{ background:var(--danger-soft); border-left-color:var(--danger); }
+
+  .panel{
+    background:linear-gradient(180deg, rgba(51,35,15,.72), rgba(23,16,8,.72));
+    border:1px solid var(--line); border-radius:var(--radius-l); padding:20px 22px;
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 10px 30px -18px rgba(0,0,0,.6);
+  }
+  .panel h2{ font-size:1.15rem; margin-bottom:14px; }
+  .panel h2 .step{ display:inline-block; width:22px; height:22px; border-radius:50%; background:var(--surface-2); color:var(--ink-soft); font-family:'Karla',sans-serif; font-size:.72rem; font-weight:700; text-align:center; line-height:22px; margin-right:8px; }
+
+  .field{ display:flex; flex-direction:column; gap:5px; margin-bottom:14px; }
+  .field label{ font-size:.76rem; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em; }
+  .field .hint{ font-size:.74rem; color:var(--muted); font-weight:400; text-transform:none; letter-spacing:0; }
+  .field input[type=text], .field input[type=password], .field input[type=number], .field select, .field textarea{
+    border:1px solid var(--line); border-radius:var(--radius-s); padding:9px 11px;
+    background:var(--bg); color:var(--ink); font-size:.9rem; font-family:inherit; width:100%;
+  }
+  .field textarea{ resize:vertical; min-height:60px; }
+  .field-row{ display:flex; gap:14px; flex-wrap:wrap; }
+  .field-row .field{ flex:1; min-width:180px; }
+
+  details.settings-more{ margin-top:2px; }
+  details.settings-more summary{ cursor:pointer; font-size:.78rem; color:var(--muted); font-weight:600; }
+
+  .cat-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; margin-bottom:16px; }
+  .cat-card{
+    border:1.5px solid var(--line); background:var(--surface-2); border-radius:var(--radius-m); padding:14px;
+    cursor:pointer; text-align:left; display:flex; flex-direction:column; gap:5px;
+    box-shadow:0 4px 14px -8px rgba(0,0,0,.5);
+    transition:border-color .12s, box-shadow .12s, background .12s, transform .12s;
+  }
+  .cat-card:hover{ background:var(--surface-3); border-color:var(--sage); transform:translateY(-1px); }
+  .cat-card.selected{
+    border-color:var(--accent);
+    box-shadow:0 0 0 2px var(--accent), 0 0 22px rgba(240,180,41,.45);
+    background:var(--accent-soft);
+  }
+  .cat-card .cat-name{ font-weight:700; font-size:.92rem; color:var(--ink); }
+  .cat-card.selected .cat-name{ color:var(--accent); }
+  .cat-card .cat-desc{ font-size:.74rem; color:var(--ink-soft); line-height:1.4; }
+
+  .upload-box{
+    border:2px dashed var(--line); border-radius:var(--radius-m); padding:22px; text-align:center;
+    cursor:pointer; background:var(--bg); position:relative; overflow:hidden; min-height:160px;
+    display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px;
+  }
+  .upload-box:hover{ background:var(--surface-2); }
+  .upload-box img{ max-height:220px; border-radius:var(--radius-s); }
+  .upload-box .up-label{ font-size:.85rem; color:var(--muted); }
+  .upload-box input[type=file]{ position:absolute; inset:0; opacity:0; cursor:pointer; }
+
+  .intensity-row{ display:flex; align-items:center; gap:12px; }
+  .intensity-row input[type=range]{ flex:1; accent-color:var(--accent); }
+  .intensity-label{ font-size:.8rem; font-weight:700; color:var(--accent); min-width:70px; text-align:right; }
+
+  .botox-zones{ display:flex; flex-direction:column; gap:8px; }
+  .botox-zone-row{
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    border:1px solid var(--line); background:var(--surface-2); border-radius:var(--radius-s);
+    padding:9px 12px;
+  }
+  .botox-zone-row.active{ border-color:var(--accent); background:var(--accent-soft); }
+  .botox-zone-check{ display:flex; align-items:center; gap:8px; font-size:.86rem; font-weight:600; cursor:pointer; flex:1; min-width:180px; }
+  .botox-zone-check input{ width:16px; height:16px; accent-color:var(--accent); flex:none; }
+  .botox-zone-slider{ display:flex; align-items:center; gap:10px; flex:1; min-width:180px; }
+  .botox-zone-slider input[type=range]{ flex:1; accent-color:var(--accent); }
+  .botox-zone-slider input[type=range]:disabled{ opacity:.35; }
+  .botox-zone-level{ font-size:.78rem; font-weight:700; color:var(--accent); min-width:118px; text-align:right; }
+
+  .multi-toggle-row{
+    display:flex; align-items:flex-start; gap:9px; margin-top:12px; padding:10px 12px;
+    border:1px dashed var(--line); border-radius:var(--radius-s); background:var(--surface-2);
+  }
+  .multi-toggle-row input{ margin-top:2px; accent-color:var(--accent); width:16px; height:16px; flex:none; }
+  .multi-toggle-row .mt-text{ font-size:.82rem; color:var(--ink-soft); line-height:1.45; }
+  .multi-toggle-row .mt-text strong{ color:var(--ink); }
+
+  .consent-row{ display:flex; align-items:flex-start; gap:9px; font-size:.82rem; color:var(--ink-soft); margin:14px 0 18px; }
+  .consent-row input{ margin-top:3px; accent-color:var(--accent); width:16px; height:16px; flex:none; }
+
+  .gen-actions{ display:flex; justify-content:flex-end; gap:10px; }
+
+  .spinner{
+    width:16px; height:16px; border-radius:50%; border:2px solid rgba(255,255,255,.5); border-top-color:#fff;
+    display:inline-block; vertical-align:-3px; margin-right:7px; animation:spin .7s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .result-wrap{ margin-top:18px; }
+  .compare{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .compare.multi{ display:flex; flex-wrap:wrap; }
+  .compare.multi .compare-col{ flex:1 1 200px; min-width:180px; }
+  @media (max-width:640px){ .compare{ grid-template-columns:1fr; } }
+  .compare-col{ background:var(--bg); border:1px solid var(--line); border-radius:var(--radius-m); padding:10px; display:flex; flex-direction:column; gap:8px; }
+  .compare-col h4{ font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:0; text-align:center; }
+  .compare-col.is-variant h4{ color:var(--accent); }
+  .compare-col .imgbox{ position:relative; border-radius:var(--radius-s); overflow:hidden; background:var(--surface-2); aspect-ratio:3/4; display:flex; align-items:center; justify-content:center; }
+  .compare-col .imgbox img{ width:100%; height:100%; object-fit:cover; }
+  .wm{ position:absolute; bottom:6px; left:6px; right:6px; background:rgba(20,14,11,.62); color:#fff; font-size:.62rem;
+    padding:4px 7px; border-radius:6px; text-align:center; letter-spacing:.03em; }
+  .compare-col .col-save{ width:100%; }
+  .compare-col .col-saved{ font-size:.74rem; color:var(--accent); font-weight:700; text-align:center; }
+
+  .result-actions{ display:flex; justify-content:space-between; gap:10px; margin-top:14px; flex-wrap:wrap; }
+  .result-hint{ font-size:.78rem; color:var(--muted); margin-top:10px; text-align:center; }
+
+  .gallery-toolbar{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+  .gallery-toolbar select{ border:1px solid var(--line); border-radius:var(--radius-s); padding:7px 10px; background:var(--bg); color:var(--ink); font-size:.82rem; }
+  .gallery-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:16px; }
+  .gcard{ background:var(--bg); border:1px solid var(--line); border-radius:var(--radius-m); padding:10px; display:flex; flex-direction:column; gap:8px; }
+  .gcard .gpair{ display:flex; gap:6px; }
+  .gcard .gpair .imgbox{ position:relative; flex:1; aspect-ratio:3/4; border-radius:7px; overflow:hidden; background:var(--surface-2); }
+  .gcard .gpair .imgbox img{ width:100%; height:100%; object-fit:cover; }
+  .gcard .gtag{ position:absolute; bottom:4px; left:4px; background:rgba(20,14,11,.6); color:#fff; font-size:.58rem; padding:1px 6px; border-radius:999px; text-transform:uppercase; }
+  .gcard .gmeta{ font-size:.78rem; }
+  .gcard .gname{ font-weight:700; }
+  .gcard .gsub{ color:var(--muted); font-size:.72rem; }
+  .gcard .gactions{ display:flex; gap:6px; flex-wrap:wrap; }
+  .gcard .gactions button{ flex:1; }
+  .empty-note{ padding:36px 20px; text-align:center; color:var(--muted); font-size:.9rem; }
+
+  .form-error{ background:var(--danger-soft); color:var(--danger); border-radius:var(--radius-s); padding:9px 11px; font-size:.82rem; margin-bottom:12px; }
+
+  /* printable single-sheet comparison */
+  #printSheet{ display:none; }
+  @media print{
+    body > *:not(#printSheet){ display:none !important; }
+    #printSheet{ display:block !important; }
+  }
+  .print-sheet{ width:100%; max-width:680px; margin:0 auto; font-family:'Karla',sans-serif; color:#1a1210; }
+  .print-sheet h2{ font-family:'Fraunces',serif; text-align:center; margin-bottom:2px; }
+  .print-sheet .p-sub{ text-align:center; color:#6b5344; font-size:.85rem; margin-bottom:18px; }
+  .print-sheet .p-compare{ display:flex; gap:16px; }
+  .print-sheet .p-col{ flex:1; text-align:center; }
+  .print-sheet .p-col img{ width:100%; border-radius:10px; border:1px solid #ddc9b4; }
+  .print-sheet .p-col h4{ font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; color:#6b5344; margin-bottom:6px; }
+  .print-sheet .p-note{ margin-top:16px; font-size:.72rem; color:#6b5344; text-align:center; line-height:1.5; }
+
+  input[type=file]{ font-size:.8rem; }
+
+  /* ============ HERO / ilk ekran (sade, modern) ============ */
+  .hero{ position:relative; padding:56px 26px 34px; text-align:center; }
+  .hero-inner{ max-width:600px; margin:0 auto; }
+  .hero-badge{
+    display:inline-flex; align-items:center; gap:6px; font-family:'IBM Plex Mono',monospace;
+    font-size:.66rem; letter-spacing:.1em; color:var(--accent); background:var(--accent-soft);
+    border-radius:999px; padding:6px 14px; margin-bottom:18px; text-transform:uppercase;
+  }
+  .hero-title{ font-size:2rem; line-height:1.18; color:var(--ink); letter-spacing:-.02em; }
+  .hero-title em{ font-style:normal; color:var(--accent); }
+  .hero-sub{ margin:14px auto 22px; max-width:420px; color:var(--ink-soft); font-size:.92rem; line-height:1.6; }
+  .hero-cta .btn-primary{ font-size:.9rem; padding:12px 24px; }
+
+  .hero-tabs{ display:flex; flex-wrap:wrap; justify-content:center; gap:7px; margin:26px 0 30px; }
+  .hero-tab{
+    background:var(--surface-2); border-radius:999px; padding:7px 15px;
+    font-size:.75rem; font-weight:600; color:var(--ink-soft); letter-spacing:-.01em;
+  }
+
+  .hero-showcase{ margin-top:8px; }
+  .showcase-frame{
+    position:relative; width:min(300px, 78vw); aspect-ratio:5/6; margin:0 auto; border-radius:28px; overflow:hidden;
+    background:var(--surface-2); box-shadow:0 1px 2px rgba(0,0,0,.5), 0 24px 48px -16px rgba(0,0,0,.55), 0 0 0 1px var(--line);
+  }
+  .showcase-face{ position:absolute; inset:0; width:100%; height:100%; display:block; object-fit:cover; object-position:center top; }
+  .before-face{ filter:grayscale(.9) brightness(.72) contrast(.95) saturate(.6); }
+  .after-face{ clip-path:inset(0 100% 0 0); animation:revealSweep 6s ease-in-out infinite; }
+  .showcase-divider{
+    position:absolute; top:0; bottom:0; width:2px; left:0%; background:var(--accent);
+    box-shadow:0 0 12px var(--accent), 0 0 2px #fff; animation:dividerSweep 6s ease-in-out infinite;
+  }
+  @keyframes revealSweep{ 0%,10%{ clip-path:inset(0 100% 0 0); } 50%,60%{ clip-path:inset(0 0% 0 0); } 100%{ clip-path:inset(0 100% 0 0); } }
+  @keyframes dividerSweep{ 0%,10%{ left:0%; } 50%,60%{ left:100%; } 100%{ left:0%; } }
+  .showcase-tag{
+    position:absolute; top:8px; font-family:'IBM Plex Mono',monospace; font-size:.6rem; letter-spacing:.06em;
+    padding:3px 8px; border-radius:999px; background:rgba(20,14,11,.6); color:#fff; z-index:2;
+  }
+  .tag-before{ left:8px; } .tag-after{ right:8px; }
+  .showcase-caption{ margin-top:10px; font-size:.72rem; color:var(--muted); }
+
+  .panel{ opacity:0; transform:translateY(16px); transition:opacity .6s ease, transform .6s ease; }
+  .panel.in-view{ opacity:1; transform:translateY(0); }
+
+  @media (prefers-reduced-motion: reduce){
+    .after-face, .showcase-divider{ animation:none !important; }
+    .panel{ opacity:1; transform:none; transition:none; }
+  }
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-inner">
+    <span class="hero-badge">✦ AI GÖRSEL SİMÜLASYON</span>
+    <h1 class="hero-title">Müşteriye <em>sonucu</em><br>görüşme anında göster.</h1>
+    <p class="hero-sub">Bir "önce" fotoğrafı çekin, işlemi seçin — yapay zekâ olası "sonrası" görselini saniyeler içinde oluştursun.</p>
+    <div class="hero-cta">
+      <button type="button" class="btn-primary" id="heroStartBtn">Simülasyona Başla ↓</button>
+    </div>
+    <div class="hero-tabs" aria-hidden="true">
+      <span class="hero-tab">Saç Ekimi</span>
+      <span class="hero-tab">Botoks</span>
+      <span class="hero-tab">Dolgu</span>
+      <span class="hero-tab">Gülüş Tasarımı</span>
+      <span class="hero-tab">Zayıflama / Vücut</span>
+    </div>
+    <div class="hero-showcase" aria-hidden="true">
+      <div class="showcase-frame">
+        <img class="showcase-face before-face" src="" alt="Temsili önce görseli">
+        <img class="showcase-face after-face" src="" alt="Temsili sonrası görseli">
+        <span class="showcase-divider"></span>
+        <span class="showcase-tag tag-before">ÖNCE</span>
+        <span class="showcase-tag tag-after">SONRA</span>
+      </div>
+      <div class="showcase-caption">Temsili görsel — gerçek hasta fotoğrafı değildir</div>
+    </div>
+  </div>
+</section>
+
+<header class="top">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <div>
+      <h1>Nirvana <em>Önce/Sonra</em></h1>
+      <span class="tag">Satış için AI görsel simülasyon aracı</span>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button type="button" class="btn-ghost" id="exportBtn">⭳ Dışa aktar</button>
+    <button type="button" class="btn-ghost" id="importTrigger">⭱ İçe aktar</button>
+    <input type="file" id="importInput" accept="application/json" hidden>
+  </div>
+</header>
+
+<main>
+
+  <div class="notice">
+    <strong>Bu ne işe yarar?</strong> Müşterinin "önce" fotoğrafını çekip seçtiğiniz işlem için yapay zekâ ile
+    olası bir "sonrası" görseli üretir — satış görüşmesinde göstermek için. Kendi gerçek öncesi/sonrası
+    fotoğraflarınız biriktikçe bu simülasyonların yerini gerçek sonuçlar alacak; her kayıtta
+    <strong>"Gerçek sonucu yükle"</strong> ile bunu yapabilirsiniz.
+    <br><br>
+    <strong>Önemli:</strong> Üretilen görseller birer <strong>tahmindir</strong>, tıbbi bir garanti değildir.
+    Her görselde bunu belirten bir filigran bulunur ve müşteriden fotoğrafının bu amaçla kullanılacağına dair
+    onay alınması gerekir.
+  </div>
+
+  <!-- SETTINGS -->
+  <section class="panel" id="settingsPanel" hidden>
+    <h2><span class="step">1</span>API Ayarı</h2>
+    <div class="field-row">
+      <div class="field">
+        <label for="apiKey">Google AI Studio API anahtarı</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="password" id="apiKey" placeholder="AQ...." style="flex:1;">
+          <button type="button" class="btn-ghost" id="forgetKeyBtn" title="Kaydedilen anahtarı bu bilgisayardan sil">Unut</button>
+        </div>
+        <span class="hint" id="keySavedNote" hidden>Kaydedildi ✓</span>
+      </div>
+      <div class="field" style="max-width:260px">
+        <label for="modelSelect">Model</label>
+        <select id="modelSelect">
+          <option value="gemini-2.5-flash-image">gemini-2.5-flash-image (nano banana)</option>
+          <option value="gemini-3.1-flash-image">gemini-3.1-flash-image</option>
+        </select>
+      </div>
+    </div>
+  </section>
+  <div class="notice" id="autoConnectedNotice">
+    ✓ Google hesabına bağlı — API anahtarı otomatik kullanılıyor, tekrar girmeniz gerekmiyor.
+    <a href="#" id="showSettingsLink" style="color:var(--accent); text-decoration:underline;">Ayarları göster</a>
+  </div>
+
+  <!-- NEW SIMULATION -->
+  <section class="panel">
+    <h2><span class="step">1</span>Yeni Simülasyon</h2>
+    <div id="formError" class="form-error" hidden></div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="custName">Müşteri adı</label>
+        <input type="text" id="custName" placeholder="Örn. Ayşe Kara">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>İşlem kategorisi <span class="hint">— birden fazla seçebilirsiniz, hepsi aynı görselde birlikte uygulanır. Seçimler bir sonraki denemeye de taşınır, unutmayın!</span></label>
+    </div>
+    <div class="cat-grid" id="catGrid"></div>
+    <div style="display:flex; align-items:center; gap:10px; margin:6px 0 4px;">
+      <span class="hint" id="selectedCatsSummary">Hiçbiri seçili değil</span>
+      <button type="button" class="btn-ghost" id="clearCatsBtn" style="margin-left:auto">Seçimi Temizle</button>
+    </div>
+
+    <div class="field" id="customPromptField" hidden>
+      <label for="customPrompt">Uygulanacak değişikliği yazın</label>
+      <textarea id="customPrompt" placeholder="Örn. Dudaklara hafif dolgu görünümü ekle, doğal dursun."></textarea>
+    </div>
+
+    <div class="field" id="hairZonesField" hidden>
+      <label>Saç ekimi yoğunluğu <span class="hint">— bölgeyi işaretleyin, her biri için "Az" ile "Çok Yoğun" arasında kendiniz ayarlayın</span></label>
+      <div id="hairZonesList" class="botox-zones"></div>
+      <label class="multi-toggle-row">
+        <input type="checkbox" id="hairMultiToggle">
+        <span class="mt-text"><strong>Karşılaştırmalı göster:</strong> tek sonuç yerine aynı anda
+        "Orta", "Yoğun" ve "Çok Yoğun" olmak üzere 3 farklı yoğunluk versiyonu üretsin —
+        müşteriye seçenekleri yan yana gösterebilirsiniz. (Yukarıda işaretlediğiniz bölgeler
+        için geçerlidir, tek tek ayarladığınız seviyelerin yerine bu 3 sabit seviye kullanılır.)</span>
+      </label>
+    </div>
+
+    <div class="field" id="makeupField" hidden>
+      <label>Kalıcı makyaj teknikleri <span class="hint">— istediğiniz teknik(ler)i işaretleyin, birden fazlası birlikte seçilebilir (ör. kaş için hem pudra hem kıl = "combo brows")</span></label>
+      <div id="makeupOptionsList" class="botox-zones"></div>
+    </div>
+
+    <div class="field" id="botoxZonesField" hidden>
+      <label>Botoks bölgeleri <span class="hint">— bölgeyi işaretleyin, her biri için 1-5 arası şiddeti kendiniz ayarlayın</span></label>
+      <div id="botoxZonesList" class="botox-zones"></div>
+    </div>
+
+    <div class="field" id="youcamZonesField" hidden>
+      <label>Zayıflatılacak bölgeler <span class="hint">— bölgeyi işaretleyin, her biri için 1-5 arası şiddeti kendiniz ayarlayın (Google Gemini ile simüle edilir, ayrı anahtar gerekmez)</span></label>
+      <div id="youcamZonesList" class="botox-zones"></div>
+    </div>
+
+    <div class="field">
+      <label>Yoğunluk <span class="hint" id="intensityGeneralHint">— Saç Ekimi, Botoks ve Zayıflama dışındaki kategoriler için</span></label>
+      <div class="intensity-row">
+        <input type="range" id="intensity" min="1" max="3" value="2" step="1">
+        <span class="intensity-label" id="intensityLabel">Orta</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="beforePhoto">Önce fotoğrafı</label>
+      <div class="upload-box" id="uploadBox">
+        <span class="up-label" id="uploadLabel">Fotoğraf seçin veya kameradan çekin</span>
+        <input type="file" id="beforePhoto" accept="image/*" capture="environment">
+      </div>
+    </div>
+
+    <label class="consent-row">
+      <input type="checkbox" id="consentBox">
+      <span>Müşteri, fotoğrafının bu simülasyon ve dahili kayıt amacıyla kullanılmasını onaylamıştır.</span>
+    </label>
+
+    <div class="gen-actions">
+      <button type="button" class="btn-primary" id="generateBtn">Simülasyon Oluştur</button>
+    </div>
+
+    <div class="result-wrap" id="resultWrap" hidden>
+      <div class="compare" id="resultCompare"></div>
+      <div class="result-hint" id="resultHint" hidden>Beğendiğiniz versiyon(lar)ı, görselin altındaki "Galeriye kaydet" ile ayrı ayrı kaydedebilirsiniz.</div>
+      <div class="result-actions">
+        <button type="button" class="btn-ghost" id="discardBtn">Sil, tekrar dene</button>
+        <button type="button" class="btn-primary" id="saveGalleryBtn">Galeriye kaydet</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- GALLERY -->
+  <section class="panel">
+    <h2><span class="step">2</span>Galeri <span class="hint mono" id="galleryCount"></span></h2>
+    <div class="gallery-toolbar">
+      <select id="galleryFilter">
+        <option value="all">Tüm kategoriler</option>
+      </select>
+      <span class="hint" style="color:var(--muted); font-size:.78rem;">Kapatmadan önce "Dışa aktar" ile yedekleyin — veriler yalnızca bu sekimde tutulur.</span>
+    </div>
+    <div id="galleryGrid" class="gallery-grid"></div>
+    <div class="empty-note" id="galleryEmpty">Henüz kayıtlı simülasyon yok.</div>
+  </section>
+
+</main>
+
+<div id="printSheet"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // Bu bilgisayara özel: Google AI Studio API anahtarı burada sabit olarak
+  // tutuluyor, böylece kullanıcı her açılışta tekrar girmek zorunda kalmıyor.
+  // Bu dosyayı başka biriyle paylaşırsanız anahtarınızı da paylaşmış olursunuz.
+  var EMBEDDED_API_KEY = "AQ.Ab8RN6IXshUAcmLBarld5sgjIC3ohNvax_7e8N2rNZtI_EVYXQ";
+
+  var CATEGORIES = [
+    { key:"sac_ekimi", name:"Saç Ekimi", desc:"Bölge bazlı yoğunluk simülasyonu, az-çok yoğun ayarı",
+      special:"hair" },
+    { key:"botoks", name:"Botoks", desc:"Bölge bazlı kırışıklık giderme, 1-5 şiddet ayarı",
+      special:"botoks" },
+    { key:"dolgu", name:"Dolgu", desc:"Dudak, yanak, çene dolgusu",
+      prompt:"Simulate the realistic visual effect of subtle dermal filler on this photo: gently refine and add natural volume to the lips and/or cheeks as appropriate, and soften nasolabial folds if visible. {intensity} Keep it natural, not exaggerated, overfilled or plastic-looking. Keep identity, skin tone, hairstyle, background and lighting unchanged." },
+    { key:"kalici_makyaj", name:"Kalıcı Makyaj", desc:"Kaş (pudra / kıl tekniği), dudak renklendirme, eyeliner — teknik bazlı seçim",
+      special:"makeup" },
+    { key:"zayiflama", name:"Zayıflama / Vücut", desc:"Bölge bazlı vücut inceltme, 1-5 şiddet ayarı (yerel piksel sıkıştırma — API/anahtar gerekmez)",
+      special:"body" },
+    { key:"gulus", name:"Gülüş Tasarımı", desc:"Diş beyazlatma / gülüş simülasyonu",
+      prompt:"Simulate the realistic visual effect of a smile makeover on this photo: make the visible teeth whiter and more evenly aligned when the person is smiling. {intensity} Keep the face, lips shape, skin, background and lighting unchanged, and keep it natural-looking." },
+    { key:"sac_boya", name:"Saç Rengi / Kesimi", desc:"Renk veya kesim önizlemesi",
+      prompt:"Simulate a realistic new hairstyle/hair color on this photo as described by the stylist. {intensity} Keep the face, skin, background, lighting and clothing unchanged, and keep the hair texture physically plausible." },
+    { key:"serbest", name:"Serbest / Diğer", desc:"Kendi açıklamanızı yazın", prompt:null }
+  ];
+
+  var INTENSITY_TEXT = {
+    1: "Apply a light, subtle version of this change.",
+    2: "Apply a moderate, clearly visible but realistic version of this change.",
+    3: "Apply a pronounced, strong version of this change, while still looking physically plausible."
+  };
+  var INTENSITY_LABELS = { 1:"Hafif", 2:"Orta", 3:"Belirgin" };
+
+  // Saç Ekimi: bölge bazlı, her bölge için ayrı 1-5 manuel yoğunluk ayarı
+  // ("Az" → "Çok Yoğun"). Botoks/Zayıflama bölümleriyle aynı desende kurulmuştur.
+  var HAIR_ZONES = [
+    { key:"on_cizgi", name:"Ön Saç Çizgisi", phrase:"the front hairline area" },
+    { key:"tepe", name:"Tepe (Crown / Vertex)", phrase:"the crown/vertex area at the top-back of the scalp" },
+    { key:"sakak", name:"Şakaklar", phrase:"the temple areas on both sides of the hairline" },
+    { key:"genel", name:"Genel Sıklaştırma", phrase:"the overall scalp, as an all-over thickening" }
+  ];
+  var HAIR_LEVEL_TEXT = {
+    1: "very light density, just barely filling in — mostly for a natural, subtle improvement",
+    2: "light-moderate density, a visible but modest amount of new hair growth",
+    3: "moderate density, a clearly visible and realistic amount of natural-looking hair growth",
+    4: "dense, a strong and noticeably fuller amount of natural-looking hair growth",
+    5: "very dense, maximally full and thick hair growth while still looking physically plausible and natural"
+  };
+  var HAIR_LEVEL_LABELS = { 1:"Az", 2:"Az-Orta", 3:"Orta", 4:"Yoğun", 5:"Çok Yoğun" };
+
+  // Karşılaştırmalı gösterim için sabit 3 yoğunluk seviyesi. "Karşılaştırmalı göster"
+  // işaretlendiğinde, işaretli tüm saç ekimi bölgeleri için tek tek ayarlanan seviyeler
+  // yerine bu 3 seviye kullanılır ve her biri için ayrı bir görsel üretilir.
+  var HAIR_MULTI_PRESETS = [
+    { key:"orta", label:"Orta (3/5)", level:3 },
+    { key:"yogun", label:"Yoğun (4/5)", level:4 },
+    { key:"cokyogun", label:"Çok Yoğun (5/5)", level:5 }
+  ];
+
+  // Botoks: bölge bazlı, her bölge için ayrı 1-5 manuel şiddet ayarı
+  var BOTOX_ZONES = [
+    { key:"alin", name:"Alın Çizgileri", phrase:"the horizontal forehead lines" },
+    { key:"catik", name:"Çatık Çizgileri (Kaşlar Arası)", phrase:"the vertical glabellar frown lines between the eyebrows" },
+    { key:"kazayagi", name:"Göz Çevresi (Kaz Ayağı)", phrase:"the crow's feet wrinkles at the outer corners of the eyes" },
+    { key:"burun", name:"Burun (Tavşan Çizgileri)", phrase:"the bunny lines on the sides of the nose" },
+    { key:"cene_cukur", name:"Çene (Portakal Kabuğu)", phrase:"the dimpled, orange-peel texture of the chin" },
+    { key:"cene_hatti", name:"Çene Hattı Sıkma (Masseter)", phrase:"the bulk of the masseter jaw muscle, to give a slimmer jawline" }
+  ];
+  // Kalıcı Makyaj: kaş için iki ayrı teknik (pudra/ombre veya kıl/microblading — birlikte
+  // de seçilebilir, ör. "combo brows"), artı dudak renklendirme ve eyeliner seçenekleri.
+  // Her biri bağımsız bir açma/kapama; şiddet için genel "Yoğunluk" kaydırıcısı kullanılır.
+  var MAKEUP_OPTIONS = [
+    { key:"pudra", name:"Kaş — Pudra (Ombre) Tekniği",
+      phrase:"soft, powdery ombre-style brow shading that is lighter near the front of the brow and gradually deepens toward the tail, evenly filled and well-shaped for the face — NOT individual hair strokes" },
+    { key:"kil", name:"Kaş — Kıl (Microblading) Tekniği",
+      phrase:"fine, crisp hair-stroke (microblading) marks that mimic individual natural brow hairs, giving a textured, hair-like brow shape well-suited to the face" },
+    { key:"dudak", name:"Dudak Renklendirme",
+      phrase:"a soft, natural lip blush/tint that enhances and evens out the lips' natural color" },
+    { key:"eyeliner", name:"Eyeliner (Göz Kalemi)",
+      phrase:"a subtle, well-defined eyeliner line along the upper lash line" }
+  ];
+
+  var BOTOX_LEVEL_TEXT = {
+    1: "very light, barely noticeable",
+    2: "light, subtle",
+    3: "moderate, clearly visible but natural",
+    4: "strong, quite noticeable",
+    5: "very strong, maximally smoothed while still looking physically plausible"
+  };
+
+  // Zayıflama / Vücut: her bölge için 1-5 arası şiddet, Google Gemini'ye verilen
+  // metin talimatına çevrilir (YouCam gibi ayrı bir API/anahtar gerekmez).
+  // "warp:true" olan bölgeler yerel poz-tespitli piksel sıkıştırma motoruyla işlenir
+  // (AI'ye "hayal et" demek yerine gerçek pikselleri geometrik olarak inceltir).
+  // "boyun" (çift çene) bir vücut siluet bölgesi değil, yüze yakın küçük bir alan
+  // olduğu için botoks/dolgu gibi Gemini'nin metin talimatlı düzenlemesinde kalıyor.
+  var BODY_ZONES = [
+    { key:"bel", name:"Bel", phrase:"the waist, giving a slightly slimmer waistline", warp:"torso" },
+    { key:"karin", name:"Karın", phrase:"the belly/abdomen area, reducing its volume for a flatter stomach", warp:"torso" },
+    { key:"kollar", name:"Kollar", phrase:"the upper arms, making them visibly slimmer", warp:"arms" },
+    { key:"bacaklar", name:"Bacaklar", phrase:"the legs (thighs and calves), making them visibly slimmer", warp:"legs" },
+    { key:"kalca", name:"Kalça", phrase:"the hips, making them slightly slimmer", warp:"torso" },
+    { key:"boyun", name:"Boyun / Çift Çene", phrase:"the neck and jaw area, reducing the appearance of a double chin for a firmer jawline", warp:"neck" }
+  ];
+  var BODY_LEVEL_TEXT = {
+    1: "hafif", 2: "hafif-orta", 3: "orta", 4: "belirgin", 5: "maksimum"
+  };
+  var BODY_LEVEL_TEXT_EN = {
+    1: "very light, barely noticeable", 2: "light-moderate, subtle",
+    3: "moderate, clearly visible but natural", 4: "strong, quite noticeable",
+    5: "very strong, maximally slimmed while still looking physically plausible"
+  };
+
+  var state = {
+    selectedCategories: [], // birden fazla işlem aynı anda seçilebilir
+    hairZoneLevels: {}, // { zoneKey: 1-5 } - sadece işaretli bölgeler burada olur
+    botoxZoneLevels: {}, // { zoneKey: 1-5 } - sadece işaretli bölgeler burada olur
+    bodyZoneLevels: {}, // { zoneKey: 1-5 } - Zayıflama/Vücut için, sadece işaretli bölgeler burada olur
+    makeupOptions: {}, // { optionKey: true } - Kalıcı Makyaj için, sadece işaretli seçenekler burada olur
+    beforeDataUrl: null,
+    lastResult: null, // {beforeDataUrl, variants:[{label,afterDataUrl,saved}], categories, categoryName, customerName, intensity, note, createdAt}
+    gallery: []
+  };
+
+  function $(id){ return document.getElementById(id); }
+  function escapeHtml(s){
+    return String(s==null?"":s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function showError(msg){
+    var el = $("formError");
+    el.textContent = msg;
+    el.hidden = false;
+  }
+  function clearError(){ $("formError").hidden = true; }
+
+  // ---------- category grid ----------
+  function renderCatGrid(){
+    var wrap = $("catGrid");
+    wrap.innerHTML = CATEGORIES.map(function(c){
+      return '<button type="button" class="cat-card" data-key="'+c.key+'">' +
+        '<span class="cat-name">'+escapeHtml(c.name)+'</span>' +
+        '<span class="cat-desc">'+escapeHtml(c.desc)+'</span></button>';
+    }).join("");
+    wrap.querySelectorAll(".cat-card").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var key = btn.getAttribute("data-key");
+        var idx = state.selectedCategories.indexOf(key);
+        if (idx === -1){
+          state.selectedCategories.push(key);
+          btn.classList.add("selected");
+        } else {
+          state.selectedCategories.splice(idx, 1);
+          btn.classList.remove("selected");
+        }
+        $("customPromptField").hidden = state.selectedCategories.indexOf("serbest") === -1;
+        $("hairZonesField").hidden = state.selectedCategories.indexOf("sac_ekimi") === -1;
+        $("botoxZonesField").hidden = state.selectedCategories.indexOf("botoks") === -1;
+        $("youcamZonesField").hidden = state.selectedCategories.indexOf("zayiflama") === -1;
+        $("makeupField").hidden = state.selectedCategories.indexOf("kalici_makyaj") === -1;
+        updateSelectedCatsSummary();
+      });
+    });
+
+    var filterSel = $("galleryFilter");
+    CATEGORIES.forEach(function(c){
+      var opt = document.createElement("option");
+      opt.value = c.key; opt.textContent = c.name;
+      filterSel.appendChild(opt);
+    });
+  }
+
+  // Seçili kategorileri üstte küçük bir özet olarak göster — bir önceki denemeden
+  // kalan seçimleri fark etmeden yeni bir teste devam etmeyi önlemek için.
+  function updateSelectedCatsSummary(){
+    var names = CATEGORIES.filter(function(c){ return state.selectedCategories.indexOf(c.key) !== -1; })
+      .map(function(c){ return c.name; });
+    $("selectedCatsSummary").textContent = names.length ? ("Seçili: " + names.join(", ")) : "Hiçbiri seçili değil";
+  }
+
+  $("clearCatsBtn").addEventListener("click", function(){
+    state.selectedCategories = [];
+    state.hairZoneLevels = {};
+    state.botoxZoneLevels = {};
+    state.bodyZoneLevels = {};
+    state.makeupOptions = {};
+    $("catGrid").querySelectorAll(".cat-card.selected").forEach(function(btn){ btn.classList.remove("selected"); });
+    $("customPromptField").hidden = true;
+    $("hairZonesField").hidden = true;
+    $("botoxZonesField").hidden = true;
+    $("youcamZonesField").hidden = true;
+    $("makeupField").hidden = true;
+    renderHairZones();
+    renderBotoxZones();
+    renderBodyZones();
+    renderMakeupOptions();
+    updateSelectedCatsSummary();
+  });
+
+  // ---------- saç ekimi bölgeleri ----------
+  function renderHairZones(){
+    var wrap = $("hairZonesList");
+    wrap.innerHTML = HAIR_ZONES.map(function(z){
+      return '<div class="botox-zone-row" data-zone="'+z.key+'">' +
+        '<label class="botox-zone-check"><input type="checkbox" data-zone-check="'+z.key+'"> '+escapeHtml(z.name)+'</label>' +
+        '<div class="botox-zone-slider">' +
+          '<input type="range" min="1" max="5" step="1" value="3" data-zone-level="'+z.key+'" disabled>' +
+          '<span class="botox-zone-level" data-zone-label="'+z.key+'">—</span>' +
+        '</div>' +
+      '</div>';
+    }).join("");
+
+    HAIR_ZONES.forEach(function(z){
+      var row = wrap.querySelector('.botox-zone-row[data-zone="'+z.key+'"]');
+      var check = wrap.querySelector('[data-zone-check="'+z.key+'"]');
+      var slider = wrap.querySelector('[data-zone-level="'+z.key+'"]');
+      var label = wrap.querySelector('[data-zone-label="'+z.key+'"]');
+
+      check.addEventListener("change", function(){
+        slider.disabled = !check.checked;
+        if (check.checked){
+          state.hairZoneLevels[z.key] = +slider.value;
+          label.textContent = slider.value + "/5 · " + HAIR_LEVEL_LABELS[slider.value];
+          row.classList.add("active");
+        } else {
+          delete state.hairZoneLevels[z.key];
+          label.textContent = "—";
+          row.classList.remove("active");
+        }
+      });
+      slider.addEventListener("input", function(){
+        label.textContent = slider.value + "/5 · " + HAIR_LEVEL_LABELS[slider.value];
+        if (check.checked) state.hairZoneLevels[z.key] = +slider.value;
+      });
+    });
+  }
+
+  // ---------- botoks bölgeleri ----------
+  function renderBotoxZones(){
+    var wrap = $("botoxZonesList");
+    wrap.innerHTML = BOTOX_ZONES.map(function(z){
+      return '<div class="botox-zone-row" data-zone="'+z.key+'">' +
+        '<label class="botox-zone-check"><input type="checkbox" data-zone-check="'+z.key+'"> '+escapeHtml(z.name)+'</label>' +
+        '<div class="botox-zone-slider">' +
+          '<input type="range" min="1" max="5" step="1" value="3" data-zone-level="'+z.key+'" disabled>' +
+          '<span class="botox-zone-level" data-zone-label="'+z.key+'">—</span>' +
+        '</div>' +
+      '</div>';
+    }).join("");
+
+    BOTOX_ZONES.forEach(function(z){
+      var row = wrap.querySelector('.botox-zone-row[data-zone="'+z.key+'"]');
+      var check = wrap.querySelector('[data-zone-check="'+z.key+'"]');
+      var slider = wrap.querySelector('[data-zone-level="'+z.key+'"]');
+      var label = wrap.querySelector('[data-zone-label="'+z.key+'"]');
+
+      check.addEventListener("change", function(){
+        slider.disabled = !check.checked;
+        if (check.checked){
+          state.botoxZoneLevels[z.key] = +slider.value;
+          label.textContent = slider.value + "/5 · " + BOTOX_LEVEL_TEXT[slider.value];
+          row.classList.add("active");
+        } else {
+          delete state.botoxZoneLevels[z.key];
+          label.textContent = "—";
+          row.classList.remove("active");
+        }
+      });
+      slider.addEventListener("input", function(){
+        label.textContent = slider.value + "/5 · " + BOTOX_LEVEL_TEXT[slider.value];
+        if (check.checked) state.botoxZoneLevels[z.key] = +slider.value;
+      });
+    });
+  }
+
+  // ---------- kalıcı makyaj teknikleri ----------
+  function renderMakeupOptions(){
+    var wrap = $("makeupOptionsList");
+    wrap.innerHTML = MAKEUP_OPTIONS.map(function(o){
+      return '<div class="botox-zone-row" data-opt="'+o.key+'">' +
+        '<label class="botox-zone-check" style="flex:1"><input type="checkbox" data-opt-check="'+o.key+'"> '+escapeHtml(o.name)+'</label>' +
+      '</div>';
+    }).join("");
+
+    MAKEUP_OPTIONS.forEach(function(o){
+      var row = wrap.querySelector('.botox-zone-row[data-opt="'+o.key+'"]');
+      var check = wrap.querySelector('[data-opt-check="'+o.key+'"]');
+      check.addEventListener("change", function(){
+        if (check.checked){
+          state.makeupOptions[o.key] = true;
+          row.classList.add("active");
+        } else {
+          delete state.makeupOptions[o.key];
+          row.classList.remove("active");
+        }
+      });
+    });
+  }
+
+  // ---------- zayıflama / vücut bölgeleri (YouCam) ----------
+  function renderBodyZones(){
+    var wrap = $("youcamZonesList");
+    wrap.innerHTML = BODY_ZONES.map(function(z){
+      return '<div class="botox-zone-row" data-zone="'+z.key+'">' +
+        '<label class="botox-zone-check"><input type="checkbox" data-zone-check="'+z.key+'"> '+escapeHtml(z.name)+'</label>' +
+        '<div class="botox-zone-slider">' +
+          '<input type="range" min="1" max="5" step="1" value="3" data-zone-level="'+z.key+'" disabled>' +
+          '<span class="botox-zone-level" data-zone-label="'+z.key+'">—</span>' +
+        '</div>' +
+      '</div>';
+    }).join("");
+
+    BODY_ZONES.forEach(function(z){
+      var row = wrap.querySelector('.botox-zone-row[data-zone="'+z.key+'"]');
+      var check = wrap.querySelector('[data-zone-check="'+z.key+'"]');
+      var slider = wrap.querySelector('[data-zone-level="'+z.key+'"]');
+      var label = wrap.querySelector('[data-zone-label="'+z.key+'"]');
+
+      check.addEventListener("change", function(){
+        slider.disabled = !check.checked;
+        if (check.checked){
+          state.bodyZoneLevels[z.key] = +slider.value;
+          label.textContent = slider.value + "/5 · " + BODY_LEVEL_TEXT[slider.value];
+          row.classList.add("active");
+        } else {
+          delete state.bodyZoneLevels[z.key];
+          label.textContent = "—";
+          row.classList.remove("active");
+        }
+      });
+      slider.addEventListener("input", function(){
+        label.textContent = slider.value + "/5 · " + BODY_LEVEL_TEXT[slider.value];
+        if (check.checked) state.bodyZoneLevels[z.key] = +slider.value;
+      });
+    });
+  }
+
+  // ---------- intensity ----------
+  $("intensity").addEventListener("input", function(){
+    $("intensityLabel").textContent = INTENSITY_LABELS[this.value];
+  });
+
+  // ---------- image upload + resize ----------
+  function readAndResize(file, maxDim, cb){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var img = new Image();
+      img.onload = function(){
+        var w = img.width, h = img.height;
+        var scale = Math.min(1, maxDim / Math.max(w,h));
+        var cw = Math.round(w*scale), ch = Math.round(h*scale);
+        var canvas = document.createElement("canvas");
+        canvas.width = cw; canvas.height = ch;
+        canvas.getContext("2d").drawImage(img, 0, 0, cw, ch);
+        cb(canvas.toDataURL("image/jpeg", 0.9));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  $("beforePhoto").addEventListener("change", function(){
+    var file = this.files && this.files[0];
+    if (!file) return;
+    readAndResize(file, 1024, function(dataUrl){
+      state.beforeDataUrl = dataUrl;
+      var box = $("uploadBox");
+      box.querySelectorAll("img").forEach(function(i){ i.remove(); });
+      var img = document.createElement("img");
+      img.src = dataUrl;
+      box.insertBefore(img, box.firstChild);
+      $("uploadLabel").textContent = "Değiştirmek için tekrar tıklayın";
+    });
+  });
+
+  // ---------- Zayıflama / Vücut: yerel poz-tespitli piksel sıkıştırma ----------
+  // Ticari body-slimming araçlarının (Meitu, Facetune vb.) kullandığı yönteme benzer:
+  // AI'ye "yeni bir vücut hayal et" demek yerine, gerçek fotoğraftaki omuz/kalça/diz/
+  // bilek noktalarını (Google MediaPipe Pose ile) tespit edip o bölgeyi geometrik
+  // olarak sıkıştırıyoruz. Kıyafet pikselleri de vücutla birlikte sıkıştığı için bol
+  // kıyafette bile görünür bir fark oluşur, ve hiçbir API anahtarı/kredi gerekmez.
+  var poseLandmarkerPromise = null;
+  function getPoseLandmarker(){
+    if (!poseLandmarkerPromise){
+      poseLandmarkerPromise = (async function(){
+        var vision = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs");
+        var fileset = await vision.FilesetResolver.forVisionTasks(
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+        );
+        return await vision.PoseLandmarker.createFromOptions(fileset, {
+          baseOptions: {
+            modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+            delegate: "GPU"
+          },
+          runningMode: "IMAGE",
+          numPoses: 1,
+          outputSegmentationMasks: true
+        });
+      })();
+    }
+    return poseLandmarkerPromise;
+  }
+
+  function loadImageEl(dataUrl){
+    return new Promise(function(resolve, reject){
+      var img = new Image();
+      img.onload = function(){ resolve(img); };
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
+  }
+
+  // Bir vücut noktası çiftinin (ör. sol/sağ kalça) o satırdaki x konumunu, y'ye göre
+  // iki referans nokta arasında doğrusal enterpolasyonla bulur.
+  function lerpPoint(p0, p1, t){ return { x: p0.x + (p1.x-p0.x)*t, y: p0.y + (p1.y-p0.y)*t }; }
+
+  // level(1-5) -> sıkıştırma oranı (0..1)
+  function levelToSqueeze(lvl){ return { 1:.04, 2:.08, 3:.12, 4:.16, 5:.20 }[lvl] || 0; }
+
+  // Bir satırdaki pikselleri, cx merkezli ve R yarıçaplı bir bant içinde s oranında
+  // içe doğru sıkıştırır (merkeze yakın en çok, bant kenarında hiç — dikişsiz geçiş).
+  // maskRow verilirse (MediaPipe'ın kişi/arka plan segmentasyon maskesi), her hedef
+  // piksel için "bu nokta gerçekten kişi mi?" diye bakar: kişi ise kaydırılmış (sıkıştırılmış)
+  // örneği kullanır, arka plansa pikseli olduğu yerde bırakır — böylece duvar kenarı,
+  // fayans çizgisi, raf gibi arka plan detayları asla eğilip bükülmez.
+  function squeezeRow(srcRow, dstRow, width, cx, R, s, maskRow){
+    if (s <= 0 || R <= 1) { dstRow.set(srcRow); return; }
+    for (var x=0; x<width; x++){
+      var d = x - cx;
+      var r = Math.abs(d) / R;
+      var srcX;
+      if (r >= 1){
+        srcX = x;
+      } else {
+        var w = 1 - r*r; // merkezde 1, bant kenarında 0 — yumuşak geçiş
+        var scale = 1 - s*w;
+        srcX = cx + d/scale;
+      }
+      var sx = Math.max(0, Math.min(width-1, Math.round(srcX)));
+      var so = sx*4, doOff = x*4;
+      if (maskRow){
+        var m = maskRow[x]; // bu SÜTUNUN orijinal kişi-olasılığı (0..1)
+        var so0 = x*4;
+        if (m <= 0.35){
+          dstRow[doOff]=srcRow[so0]; dstRow[doOff+1]=srcRow[so0+1]; dstRow[doOff+2]=srcRow[so0+2]; dstRow[doOff+3]=srcRow[so0+3];
+          continue;
+        }
+        if (m < 0.65){
+          dstRow[doOff]   = srcRow[so0]  *(1-m) + srcRow[so]  *m;
+          dstRow[doOff+1] = srcRow[so0+1]*(1-m) + srcRow[so+1]*m;
+          dstRow[doOff+2] = srcRow[so0+2]*(1-m) + srcRow[so+2]*m;
+          dstRow[doOff+3] = srcRow[so0+3]*(1-m) + srcRow[so+3]*m;
+          continue;
+        }
+      }
+      dstRow[doOff]=srcRow[so]; dstRow[doOff+1]=srcRow[so+1]; dstRow[doOff+2]=srcRow[so+2]; dstRow[doOff+3]=srcRow[so+3];
+    }
+  }
+
+  async function warpBodySlim(dataUrl, bodyZoneLevels){
+    var landmarker = await getPoseLandmarker();
+    var img = await loadImageEl(dataUrl);
+    var W = img.naturalWidth, H = img.naturalHeight;
+
+    var srcCanvas = document.createElement("canvas");
+    srcCanvas.width = W; srcCanvas.height = H;
+    var sctx = srcCanvas.getContext("2d");
+    sctx.drawImage(img, 0, 0, W, H);
+
+    var result = landmarker.detect(srcCanvas);
+    if (!result || !result.landmarks || !result.landmarks.length){
+      throw new Error("Fotoğrafta vücut/poz tespit edilemedi. Lütfen kişinin baştan en az kalçaya kadar net göründüğü, tek kişilik bir fotoğraf kullanın.");
+    }
+    var lm = result.landmarks[0].map(function(p){ return { x: p.x*W, y: p.y*H }; });
+    var L = { shoulder:lm[11], hip:lm[23], knee:lm[25], ankle:lm[27], elbow:lm[13], wrist:lm[15] };
+    var R_ = { shoulder:lm[12], hip:lm[24], knee:lm[26], ankle:lm[28], elbow:lm[14], wrist:lm[16] };
+    var mouth = { l:lm[9], r:lm[10] };
+    var ears = { l:lm[7], r:lm[8] };
+
+    function sampleMaskBilinear(arr, mw, mh, mx, my){
+      var x0 = Math.max(0, Math.min(mw-1, Math.floor(mx)));
+      var y0 = Math.max(0, Math.min(mh-1, Math.floor(my)));
+      var x1 = Math.min(mw-1, x0+1), y1 = Math.min(mh-1, y0+1);
+      var fx = mx-x0, fy = my-y0;
+      var v00 = arr[y0*mw+x0], v10 = arr[y0*mw+x1];
+      var v01 = arr[y1*mw+x0], v11 = arr[y1*mw+x1];
+      var top = v00 + (v10-v00)*fx, bot = v01 + (v11-v01)*fx;
+      return top + (bot-top)*fy;
+    }
+    function blurMask(mask, w, h, radius){
+      if (radius <= 0) return mask;
+      var tmp = new Float32Array(w*h);
+      for (var y=0; y<h; y++){
+        var rowOff = y*w;
+        for (var x=0; x<w; x++){
+          var sum=0, cnt=0;
+          for (var dx=-radius; dx<=radius; dx++){
+            var xx = x+dx;
+            if (xx>=0 && xx<w){ sum += mask[rowOff+xx]; cnt++; }
+          }
+          tmp[rowOff+x] = sum/cnt;
+        }
+      }
+      var out = new Float32Array(w*h);
+      for (var x2=0; x2<w; x2++){
+        for (var y2=0; y2<h; y2++){
+          var sum2=0, cnt2=0;
+          for (var dy=-radius; dy<=radius; dy++){
+            var yy = y2+dy;
+            if (yy>=0 && yy<h){ sum2 += tmp[yy*w+x2]; cnt2++; }
+          }
+          out[y2*w+x2] = sum2/cnt2;
+        }
+      }
+      return out;
+    }
+    var personMask = null;
+    try {
+      if (result.segmentationMasks && result.segmentationMasks.length){
+        var maskObj = result.segmentationMasks[0];
+        var maskArr = maskObj.getAsFloat32Array();
+        var maskW = maskObj.width, maskH = maskObj.height;
+        if (maskW === W && maskH === H){
+          personMask = maskArr;
+        } else {
+          personMask = new Float32Array(W*H);
+          for (var myy=0; myy<H; myy++){
+            var my_ = myy*maskH/H;
+            for (var mxx=0; mxx<W; mxx++){
+              var mx_ = mxx*maskW/W;
+              personMask[myy*W+mxx] = sampleMaskBilinear(maskArr, maskW, maskH, mx_, my_);
+            }
+          }
+        }
+        personMask = blurMask(personMask, W, H, 1);
+        if (maskObj.close) maskObj.close();
+      }
+    } catch(maskErr){
+      personMask = null;
+    }
+
+    var dstCanvas = document.createElement("canvas");
+    dstCanvas.width = W; dstCanvas.height = H;
+    var dctx = dstCanvas.getContext("2d");
+    var srcData = sctx.getImageData(0,0,W,H);
+    var dstData = dctx.createImageData(W,H);
+    var src = srcData.data, dst = dstData.data;
+
+    var torsoS = Math.max(
+      levelToSqueeze(bodyZoneLevels.bel), levelToSqueeze(bodyZoneLevels.karin), levelToSqueeze(bodyZoneLevels.kalca)
+    );
+    var legS = levelToSqueeze(bodyZoneLevels.bacaklar);
+    var armS = levelToSqueeze(bodyZoneLevels.kollar);
+    var neckS = levelToSqueeze(bodyZoneLevels.boyun) * 0.55;
+
+    var shoulderY = (L.shoulder.y + R_.shoulder.y)/2, hipY = (L.hip.y + R_.hip.y)/2;
+    var kneeY = (L.knee.y + R_.knee.y)/2, ankleY = (L.ankle.y + R_.ankle.y)/2;
+    var shoulderW = Math.abs(R_.shoulder.x - L.shoulder.x), hipW = Math.abs(R_.hip.x - L.hip.x);
+    var torsoTop = shoulderY, torsoBottom = hipY + (hipY-shoulderY)*0.18;
+    var legBottom = ankleY + (ankleY-kneeY)*0.15;
+    var wristY = (L.wrist.y + R_.wrist.y)/2;
+
+    var mouthY = (mouth.l.y + mouth.r.y)/2;
+    var neckCenterX = (mouth.l.x + mouth.r.x)/2;
+    var earsW = Math.abs(ears.r.x - ears.l.x);
+    var neckTop = mouthY + (shoulderY-mouthY)*0.10;
+    var neckBottom = shoulderY;
+    var neckR = Math.max(6, earsW*0.42);
+
+    function applyOnRow(rowDst, W, cx, R, s, maskRow){
+      if (s <= 0) return;
+      var snapshot = new Uint8ClampedArray(rowDst);
+      squeezeRow(snapshot, rowDst, W, cx, R, s, maskRow);
+    }
+
+    function featherMul(y, top, bottom, featherPx){
+      var span = bottom - top;
+      if (span <= 0) return 1;
+      var f = Math.min(featherPx, span/2);
+      if (f <= 0) return 1;
+      if (y < top + f) return Math.max(0, (y - top) / f);
+      if (y > bottom - f) return Math.max(0, (bottom - y) / f);
+      return 1;
+    }
+
+    var torsoFeather = Math.max(4, (torsoBottom - torsoTop) * 0.14);
+    var legFeather = Math.max(4, (legBottom - hipY) * 0.08);
+    var armFeather = Math.max(4, (wristY - shoulderY) * 0.18);
+    var neckFeather = Math.max(3, (neckBottom - neckTop) * 0.25);
+
+    for (var y=0; y<H; y++){
+      var srcOff = y*W*4;
+      var rowSrc = src.subarray(srcOff, srcOff+W*4);
+      var rowDst = dst.subarray(srcOff, srcOff+W*4);
+      rowDst.set(rowSrc);
+      var maskRow = personMask ? personMask.subarray(y*W, y*W+W) : null;
+
+      if (torsoS > 0 && y >= torsoTop && y <= torsoBottom){
+        var t = Math.max(0, Math.min(1, (y-shoulderY)/Math.max(1,(hipY-shoulderY))));
+        var cx = shoulderY===hipY ? (L.shoulder.x+R_.shoulder.x)/2 : (L.shoulder.x + (L.hip.x-L.shoulder.x)*t + R_.shoulder.x + (R_.hip.x-R_.shoulder.x)*t)/2;
+        var bandW = (shoulderW + (hipW-shoulderW)*t);
+        // Yarıçap gövdenin GERÇEK genişliğine yakın olmalı: bandW iki omuz/kalça
+        // arasındaki toplam mesafe olduğu için, yarıçapı bandW'nin ~yarısında tutuyoruz.
+        // Önceki 0.95 katsayısı vücut genişliğinin neredeyse 2 katı bir alanı etkileyip
+        // kollara ve arka plana taşarak bulanıklık/şekil bozukluğuna yol açıyordu.
+        var R = Math.max(12, bandW*0.52);
+        var torsoMul = featherMul(y, torsoTop, torsoBottom, torsoFeather);
+        applyOnRow(rowDst, W, cx, R, torsoS*torsoMul, maskRow);
+      }
+
+      if (legS > 0 && y >= hipY && y <= legBottom){
+        var tl = Math.max(0, Math.min(1, y<=kneeY ? (y-hipY)/Math.max(1,(kneeY-hipY)) : (y-kneeY)/Math.max(1,(ankleY-kneeY))));
+        var lx = y<=kneeY ? lerpPoint(L.hip,L.knee,tl).x : lerpPoint(L.knee,L.ankle,tl).x;
+        var rx = y<=kneeY ? lerpPoint(R_.hip,R_.knee,tl).x : lerpPoint(R_.knee,R_.ankle,tl).x;
+        // Aynı şekilde bacak yarıçapı da hipW'ye (kalçalar arası TÜM mesafe) göre çok
+        // genişti; sol/sağ bacak bantları birbirine ve gövdeye taşıp bozulma yaratıyordu.
+        var legR = Math.max(8, Math.abs(hipW)*0.26);
+        var legMul = featherMul(y, hipY, legBottom, legFeather);
+        applyOnRow(rowDst, W, lx, legR, legS*legMul, maskRow);
+        applyOnRow(rowDst, W, rx, legR, legS*legMul, maskRow);
+      }
+
+      if (armS > 0 && y >= shoulderY && y <= wristY){
+        var elbowY = (L.elbow.y+R_.elbow.y)/2;
+        var ta = y<=elbowY ? (y-shoulderY)/Math.max(1,(elbowY-shoulderY)) : (y-elbowY)/Math.max(1,(wristY-elbowY));
+        ta = Math.max(0, Math.min(1, ta));
+        var lax = y<=elbowY ? lerpPoint(L.shoulder,L.elbow,ta).x : lerpPoint(L.elbow,L.wrist,ta).x;
+        var rax = y<=elbowY ? lerpPoint(R_.shoulder,R_.elbow,ta).x : lerpPoint(R_.elbow,R_.wrist,ta).x;
+        var armR = Math.max(7, shoulderW*0.19);
+        var armMul = featherMul(y, shoulderY, wristY, armFeather);
+        applyOnRow(rowDst, W, lax, armR, armS*armMul, maskRow);
+        applyOnRow(rowDst, W, rax, armR, armS*armMul, maskRow);
+      }
+
+      if (neckS > 0 && y >= neckTop && y <= neckBottom){
+        var neckMul = featherMul(y, neckTop, neckBottom, neckFeather);
+        applyOnRow(rowDst, W, neckCenterX, neckR, neckS*neckMul, maskRow);
+      }
+    }
+
+    dctx.putImageData(dstData, 0, 0);
+    return dstCanvas.toDataURL("image/jpeg", 0.92);
+  }
+
+  // ---------- watermark ----------
+  function addWatermark(dataUrl, cb){
+    var img = new Image();
+    img.onload = function(){
+      var canvas = document.createElement("canvas");
+      canvas.width = img.width; canvas.height = img.height;
+      var ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+      var barH = Math.max(22, Math.round(img.height*0.06));
+      ctx.fillStyle = "rgba(20,14,11,0.62)";
+      ctx.fillRect(0, img.height-barH, img.width, barH);
+      ctx.fillStyle = "#fff";
+      ctx.font = Math.max(11, Math.round(barH*0.42)) + "px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("AI SİMÜLASYON · gerçek sonucu temsil etmez", img.width/2, img.height-barH/2);
+      cb(canvas.toDataURL("image/jpeg", 0.92));
+    };
+    img.src = dataUrl;
+  }
+  function addWatermarkAsync(dataUrl){
+    return new Promise(function(resolve){ addWatermark(dataUrl, resolve); });
+  }
+
+  // ---------- robust response image extractor ----------
+  function findImageInResponse(obj){
+    var found = null;
+    function walk(node){
+      if (found || !node || typeof node !== "object") return;
+      if (Array.isArray(node)){
+        for (var i=0;i<node.length && !found;i++) walk(node[i]);
+        return;
+      }
+      var mime = node.mime_type || node.mimeType;
+      var data = node.data;
+      if (mime && typeof mime === "string" && mime.indexOf("image/") === 0 && typeof data === "string" && data.length > 100){
+        found = { mime:mime, data:data };
+        return;
+      }
+      if (node.inlineData && node.inlineData.data){
+        found = { mime: node.inlineData.mimeType || "image/png", data: node.inlineData.data };
+        return;
+      }
+      for (var k in node){
+        if (found) break;
+        if (Object.prototype.hasOwnProperty.call(node,k)) walk(node[k]);
+      }
+    }
+    walk(obj);
+    return found;
+  }
+
+  // ---------- API call ----------
+  async function safeJsonFetch(url, opts){
+    try {
+      var res = await fetch(url, opts);
+      var json = await res.json().catch(function(){ return null; });
+      var apiErr = json && json.error && json.error.message;
+      return { ok: res.ok && !!json, status: res.status, json: json,
+        summary: "HTTP " + res.status + (apiErr ? " – " + apiErr : "") };
+    } catch (networkErr){
+      return { ok:false, status:0, json:null, summary:"ağ/CORS hatası: " + networkErr.message };
+    }
+  }
+
+  async function callGeminiEdit(apiKey, model, promptText, beforeDataUrl){
+    var base64 = beforeDataUrl.split(",")[1];
+    var mimeMatch = /^data:([^;]+);/.exec(beforeDataUrl);
+    var mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+    var attempts = [];
+
+    var legacyBody = {
+      contents: [{
+        parts: [
+          { text: promptText },
+          { inline_data: { mime_type: mime, data: base64 } }
+        ]
+      }]
+    };
+    var r1 = await safeJsonFetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(model)+":generateContent?key="+encodeURIComponent(apiKey),
+      { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(legacyBody) }
+    );
+    attempts.push("generateContent → " + r1.summary);
+    if (r1.ok){
+      var img1 = findImageInResponse(r1.json);
+      if (img1) return img1;
+      attempts[attempts.length-1] += " (yanıtta görsel bulunamadı)";
+    }
+
+    var interBody = {
+      model: model,
+      input: [
+        { type:"image", mime_type: mime, data: base64 },
+        { type:"text", text: promptText }
+      ]
+    };
+    var r2 = await safeJsonFetch(
+      "https://generativelanguage.googleapis.com/v1beta/interactions?key="+encodeURIComponent(apiKey),
+      { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(interBody) }
+    );
+    attempts.push("interactions → " + r2.summary);
+    if (r2.ok){
+      var img2 = findImageInResponse(r2.json);
+      if (img2) return img2;
+      attempts[attempts.length-1] += " (yanıtta görsel bulunamadı)";
+    }
+
+    throw new Error(attempts.join("  |  "));
+  }
+
+  // ---------- prompt builders ----------
+  // hairOverrideLevel verilirse (karşılaştırmalı mod), işaretli TÜM saç ekimi bölgeleri
+  // için tek tek ayarlanmış seviyeler yerine bu sabit seviye kullanılır.
+  function buildHairInstruction(hairOverrideLevel){
+    var lines = HAIR_ZONES.filter(function(z){ return state.hairZoneLevels[z.key]; }).map(function(z){
+      var lvl = hairOverrideLevel || state.hairZoneLevels[z.key];
+      return "- Add hair transplant-style regrowth to " + z.phrase + " at density level " + lvl + "/5 (" + HAIR_LEVEL_TEXT[lvl] + ")";
+    });
+    return "Simulate the realistic visual outcome of a hair transplant procedure on this photo, ONLY in the scalp areas listed below, each at its own specified density on a 1-5 scale (1=very light/sparse, 5=very dense/thick):\n" +
+      lines.join("\n") +
+      "\nMatch the person's existing hair color and texture, and use a hairline shape appropriate for their face shape. Keep the face, skin, ears, background, lighting and clothing exactly unchanged. This is a cosmetic sales preview, not a medical claim.";
+  }
+
+  function buildMakeupInstruction(intensityText){
+    var lines = MAKEUP_OPTIONS.filter(function(o){ return state.makeupOptions[o.key]; }).map(function(o){
+      return "- " + o.phrase;
+    });
+    return "Simulate the realistic visual outcome of permanent makeup on this photo, applying ONLY the following selected techniques:\n" +
+      lines.join("\n") +
+      "\n" + intensityText + " Keep everything else about the face — skin, hairstyle, background and lighting — unchanged, and keep the result natural-looking, not overdone or artificial. This is a cosmetic sales preview, not a medical claim.";
+  }
+
+  function buildBotoxInstruction(){
+    var lines = BOTOX_ZONES.filter(function(z){ return state.botoxZoneLevels[z.key]; }).map(function(z){
+      var lvl = state.botoxZoneLevels[z.key];
+      return "- Smooth " + z.phrase + " at intensity " + lvl + "/5 (" + BOTOX_LEVEL_TEXT[lvl] + ")";
+    });
+    return "Apply localized Botox-style muscle-relaxing smoothing to this photo, ONLY in the facial areas listed below, each at its own specified intensity on a 1-5 scale (1=very light, 5=very strong):\n" +
+      lines.join("\n") +
+      "\nKeep all other facial areas, skin tone, identity, hairstyle, background and lighting unchanged. Keep the result realistic, not frozen or plastic-looking.";
+  }
+
+  function buildBodyInstruction(){
+    var lines = BODY_ZONES.filter(function(z){ return !z.warp && state.bodyZoneLevels[z.key]; }).map(function(z){
+      var lvl = state.bodyZoneLevels[z.key];
+      return "- Reshape " + z.phrase + " at intensity " + lvl + "/5 (" + BODY_LEVEL_TEXT_EN[lvl] + ")";
+    });
+    return "This is a sales-preview edit for a cosmetic clinic. Apply a CLEARLY VISIBLE, unmistakable AI reshaping to this photo — the difference must be obvious at a glance when compared side-by-side with the original, not a subtle or barely-noticeable tweak. Apply this ONLY in the areas listed below, each at its own specified intensity on a 1-5 scale (1=very light, 5=very strong and dramatic):\n" +
+      lines.join("\n") +
+      "\nKeep the person's face, identity, hairstyle, skin tone, exact pose/angle, background and lighting unchanged — change only the areas listed above. Keep the result anatomically realistic and proportional, not warped, melted or distorted, but the change must be genuinely visible, never almost imperceptible.";
+  }
+
+  function buildCategoryLine(c, customText, intensityText, hairOverrideLevel){
+    if (c.key === "serbest") return customText + " " + intensityText;
+    if (c.key === "sac_ekimi") return buildHairInstruction(hairOverrideLevel);
+    if (c.key === "botoks") return buildBotoxInstruction();
+    if (c.key === "zayiflama") return buildBodyInstruction();
+    if (c.key === "kalici_makyaj") return buildMakeupInstruction(intensityText);
+    return (c.prompt || "").replace("{intensity}", intensityText);
+  }
+
+  function composePromptText(geminiCats, customText, intensityText, hairOverrideLevel){
+    if (geminiCats.length === 1){
+      var only = geminiCats[0];
+      return only.key === "serbest"
+        ? "Apply the following realistic cosmetic change to this photo, keeping everything else (identity, background, lighting) unchanged: " + buildCategoryLine(only, customText, intensityText, hairOverrideLevel)
+        : buildCategoryLine(only, customText, intensityText, hairOverrideLevel);
+    }
+    if (geminiCats.length > 1){
+      return "Apply ALL of the following realistic cosmetic changes to this SAME photo TOGETHER, in one combined result. " +
+        " Keep everything not mentioned below (identity, background, lighting, clothing) unchanged.\n" +
+        geminiCats.map(function(c, i){ return (i+1) + ") " + buildCategoryLine(c, customText, intensityText, hairOverrideLevel); }).join("\n");
+    }
+    return "";
+  }
+
+  // ---------- generate ----------
+  $("generateBtn").addEventListener("click", async function(){
+    clearError();
+    var apiKey = EMBEDDED_API_KEY || $("apiKey").value.trim();
+    var model = $("modelSelect").value;
+    var customerName = $("custName").value.trim();
+    var intensity = $("intensity").value;
+    var cats = CATEGORIES.filter(function(c){ return state.selectedCategories.indexOf(c.key) !== -1; });
+
+    if (!state.beforeDataUrl){ showError("Lütfen önce fotoğrafı yükleyin."); return; }
+    if (!cats.length){ showError("Lütfen en az bir işlem kategorisi seçin."); return; }
+    if (!$("consentBox").checked){ showError("Devam etmeden önce müşteri onayı kutusunu işaretleyin."); return; }
+
+    var customText = $("customPrompt").value.trim();
+    if (cats.some(function(c){ return c.key === "serbest"; }) && !customText){
+      showError("Serbest kategori için ne değiştirileceğini yazın.");
+      return;
+    }
+    var isHairSelected = cats.some(function(c){ return c.key === "sac_ekimi"; });
+    var hairZoneKeys = Object.keys(state.hairZoneLevels);
+    if (isHairSelected && !hairZoneKeys.length){
+      showError("Saç ekimi için en az bir bölge işaretleyip yoğunluğunu ayarlayın.");
+      return;
+    }
+    var botoxZoneKeys = Object.keys(state.botoxZoneLevels);
+    if (cats.some(function(c){ return c.key === "botoks"; }) && !botoxZoneKeys.length){
+      showError("Botoks için en az bir bölge işaretleyip şiddetini ayarlayın.");
+      return;
+    }
+    var bodyZoneKeys = Object.keys(state.bodyZoneLevels);
+    if (cats.some(function(c){ return c.key === "zayiflama"; }) && !bodyZoneKeys.length){
+      showError("Zayıflama için en az bir bölge işaretleyip şiddetini ayarlayın.");
+      return;
+    }
+    var makeupOptionKeys = Object.keys(state.makeupOptions);
+    if (cats.some(function(c){ return c.key === "kalici_makyaj"; }) && !makeupOptionKeys.length){
+      showError("Kalıcı makyaj için en az bir teknik (pudra, kıl, dudak renklendirme veya eyeliner) işaretleyin.");
+      return;
+    }
+    var warpZoneKeys = bodyZoneKeys.filter(function(k){
+      var z = BODY_ZONES.filter(function(bz){ return bz.key === k; })[0];
+      return z && z.warp;
+    });
+    var nonWarpZoneKeys = bodyZoneKeys.filter(function(k){
+      var z = BODY_ZONES.filter(function(bz){ return bz.key === k; })[0];
+      return z && !z.warp;
+    });
+    var geminiCats = cats.filter(function(c){
+      if (c.key !== "zayiflama") return true;
+      return nonWarpZoneKeys.length > 0;
+    });
+    if (geminiCats.length && !apiKey){ showError("Lütfen önce Google API anahtarınızı girin."); return; }
+
+    var intensityText = INTENSITY_TEXT[intensity] || "";
+
+    var multiMode = isHairSelected && hairZoneKeys.length > 0 && $("hairMultiToggle").checked;
+    var variantsDef = multiMode ? HAIR_MULTI_PRESETS.slice() : [{ key:"tek", label:null, level:null }];
+
+    var combinedName = cats.map(function(c){
+      if (c.key === "sac_ekimi"){
+        var hairZoneNames = HAIR_ZONES.filter(function(z){ return state.hairZoneLevels[z.key]; }).map(function(z){ return z.name; });
+        return c.name + " (" + hairZoneNames.join(", ") + ")";
+      }
+      if (c.key === "botoks"){
+        var botoxZoneNames = BOTOX_ZONES.filter(function(z){ return state.botoxZoneLevels[z.key]; }).map(function(z){ return z.name; });
+        return c.name + " (" + botoxZoneNames.join(", ") + ")";
+      }
+      if (c.key === "zayiflama"){
+        var bodyZoneNames = BODY_ZONES.filter(function(z){ return state.bodyZoneLevels[z.key]; }).map(function(z){ return z.name; });
+        return c.name + " (" + bodyZoneNames.join(", ") + ")";
+      }
+      if (c.key === "kalici_makyaj"){
+        var makeupNames = MAKEUP_OPTIONS.filter(function(o){ return state.makeupOptions[o.key]; }).map(function(o){ return o.name; });
+        return c.name + " (" + makeupNames.join(", ") + ")";
+      }
+      return c.name;
+    }).join(" + ");
+
+    var btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Üretiliyor…';
+
+    try {
+      var workingBeforeUrl = state.beforeDataUrl;
+
+      if (warpZoneKeys.length){
+        btn.innerHTML = '<span class="spinner"></span>Vücut tespit ediliyor…';
+        try {
+          workingBeforeUrl = await warpBodySlim(workingBeforeUrl, state.bodyZoneLevels);
+        } catch(warpErr){
+          var e2 = new Error((warpErr && warpErr.message) ? warpErr.message : "Vücut sıkıştırma işlemi başarısız oldu.");
+          e2.isWarpError = true;
+          throw e2;
+        }
+      }
+
+      var variantResults = [];
+      for (var vi=0; vi<variantsDef.length; vi++){
+        var vdef = variantsDef[vi];
+        if (variantsDef.length > 1){
+          btn.innerHTML = '<span class="spinner"></span>Üretiliyor (' + vdef.label + ') ' + (vi+1) + '/' + variantsDef.length + '…';
+        } else {
+          btn.innerHTML = '<span class="spinner"></span>Üretiliyor…';
+        }
+
+        var afterRaw;
+        if (geminiCats.length){
+          var promptText = composePromptText(geminiCats, customText, intensityText, vdef.level);
+          var imgResult = await callGeminiEdit(apiKey, model, promptText, workingBeforeUrl);
+          afterRaw = "data:" + imgResult.mime + ";base64," + imgResult.data;
+        } else {
+          afterRaw = workingBeforeUrl;
+        }
+        var watermarked = await addWatermarkAsync(afterRaw);
+        variantResults.push({ label: vdef.label, afterDataUrl: watermarked, saved:false });
+      }
+
+      state.lastResult = {
+        beforeDataUrl: state.beforeDataUrl,
+        variants: variantResults,
+        categories: cats.map(function(c){ return c.key; }),
+        categoryName: combinedName,
+        customerName: customerName || "İsimsiz",
+        intensity: intensity,
+        note: customText,
+        createdAt: Date.now()
+      };
+      renderResultUI();
+      $("resultWrap").hidden = false;
+      $("resultWrap").scrollIntoView({behavior:"smooth", block:"start"});
+    } catch(err){
+      var suffix = (err && err.isWarpError)
+        ? ""
+        : " — API anahtarlarınızı ve internet bağlantınızı kontrol edin.";
+      showError("Görsel üretilemedi: " + err.message + suffix);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Simülasyon Oluştur";
+    }
+  });
+
+  // ---------- result rendering (tek sonuç veya çoklu yoğunluk karşılaştırması) ----------
+  function renderResultUI(){
+    var r = state.lastResult;
+    if (!r) return;
+    var isMulti = r.variants.length > 1;
+    var wrap = $("resultCompare");
+    wrap.className = "compare" + (isMulti ? " multi" : "");
+
+    var html = '<div class="compare-col"><h4>Önce</h4><div class="imgbox"><img src="'+r.beforeDataUrl+'" alt="Önce"></div></div>';
+    r.variants.forEach(function(v, i){
+      var title = v.label ? v.label : "Sonrası (AI simülasyon)";
+      html += '<div class="compare-col'+(v.label?' is-variant':'')+'" data-vidx="'+i+'">' +
+        '<h4>'+escapeHtml(title)+'</h4>' +
+        '<div class="imgbox"><img src="'+v.afterDataUrl+'" alt="Sonrası"><span class="wm">AI SİMÜLASYON · gerçek sonucu temsil etmez</span></div>' +
+        (v.saved
+          ? '<span class="col-saved">Galeriye kaydedildi ✓</span>'
+          : '<button type="button" class="btn-primary-sm col-save" data-save-vidx="'+i+'">Galeriye kaydet</button>') +
+        '</div>';
+    });
+    wrap.innerHTML = html;
+
+    $("resultHint").hidden = !isMulti;
+    // Çoklu modda tekli kaydet/sil aksiyon çubuğundaki "Galeriye kaydet" butonunu gizle,
+    // her sütunun kendi kaydet butonu kullanılır; sadece "Sil, tekrar dene" kalır.
+    $("saveGalleryBtn").hidden = isMulti;
+
+    wrap.querySelectorAll("[data-save-vidx]").forEach(function(b){
+      b.addEventListener("click", function(){
+        saveVariantToGallery(+this.getAttribute("data-save-vidx"));
+      });
+    });
+  }
+
+  function saveVariantToGallery(idx){
+    var r = state.lastResult;
+    if (!r || !r.variants[idx]) return;
+    var v = r.variants[idx];
+    var name = r.categoryName + (v.label ? " (" + v.label + ")" : "");
+    state.gallery.unshift({
+      beforeDataUrl: r.beforeDataUrl,
+      afterDataUrl: v.afterDataUrl,
+      categories: r.categories,
+      categoryName: name,
+      customerName: r.customerName,
+      intensity: r.intensity,
+      note: r.note,
+      createdAt: Date.now()
+    });
+    v.saved = true;
+    renderResultUI();
+    renderGallery();
+  }
+
+  $("discardBtn").addEventListener("click", function(){
+    state.lastResult = null;
+    $("resultWrap").hidden = true;
+    $("resultCompare").innerHTML = "";
+  });
+
+  $("saveGalleryBtn").addEventListener("click", function(){
+    if (!state.lastResult || !state.lastResult.variants.length) return;
+    saveVariantToGallery(0);
+    state.lastResult = null;
+    $("resultWrap").hidden = true;
+    $("resultCompare").innerHTML = "";
+  });
+
+  // ---------- gallery ----------
+  function renderGallery(){
+    var grid = $("galleryGrid");
+    var filter = $("galleryFilter").value;
+    var list = state.gallery.filter(function(g){ return filter==="all" || (g.categories && g.categories.indexOf(filter) !== -1); });
+    $("galleryCount").textContent = "(" + state.gallery.length + ")";
+    $("galleryEmpty").hidden = list.length > 0;
+
+    grid.innerHTML = list.map(function(g, idxInList){
+      var realIdx = state.gallery.indexOf(g);
+      var d = new Date(g.createdAt);
+      var dateStr = d.toLocaleDateString("tr-TR") + " " + d.toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"});
+      return '<div class="gcard" data-idx="'+realIdx+'">' +
+        '<div class="gpair">' +
+          '<div class="imgbox"><img src="'+g.beforeDataUrl+'" alt="Önce"><span class="gtag">Önce</span></div>' +
+          '<div class="imgbox"><img src="'+g.afterDataUrl+'" alt="Sonrası"><span class="gtag">'+(g.isReal?"Gerçek":"AI")+'</span></div>' +
+        '</div>' +
+        '<div class="gmeta"><div class="gname">'+escapeHtml(g.customerName)+'</div>' +
+        '<div class="gsub">'+escapeHtml(g.categoryName)+' · '+dateStr+'</div></div>' +
+        '<div class="gactions">' +
+          '<button type="button" class="btn-ghost gp-print" data-idx="'+realIdx+'">Yazdır</button>' +
+          (g.isReal ? '' : '<button type="button" class="btn-ghost gp-real" data-idx="'+realIdx+'">Gerçek sonucu yükle</button>') +
+          '<button type="button" class="btn-danger-sm gp-del" data-idx="'+realIdx+'">Sil</button>' +
+        '</div></div>';
+    }).join("");
+
+    grid.querySelectorAll(".gp-del").forEach(function(b){
+      b.addEventListener("click", function(){
+        var i = +this.getAttribute("data-idx");
+        if (confirm("Bu kaydı silmek istediğinize emin misiniz?")){
+          state.gallery.splice(i,1);
+          renderGallery();
+        }
+      });
+    });
+    grid.querySelectorAll(".gp-print").forEach(function(b){
+      b.addEventListener("click", function(){ printEntry(+this.getAttribute("data-idx")); });
+    });
+    grid.querySelectorAll(".gp-real").forEach(function(b){
+      b.addEventListener("click", function(){ uploadRealResult(+this.getAttribute("data-idx")); });
+    });
+  }
+
+  function uploadRealResult(idx){
+    var input = document.createElement("input");
+    input.type = "file"; input.accept = "image/*";
+    input.addEventListener("change", function(){
+      var file = this.files && this.files[0];
+      if (!file) return;
+      readAndResize(file, 1024, function(dataUrl){
+        state.gallery[idx].afterDataUrl = dataUrl;
+        state.gallery[idx].isReal = true;
+        renderGallery();
+      });
+    });
+    input.click();
+  }
+
+  function printEntry(idx){
+    var g = state.gallery[idx];
+    if (!g) return;
+    var d = new Date(g.createdAt);
+    document.getElementById("printSheet").innerHTML =
+      '<div class="print-sheet">' +
+      '<h2>Nirvana Estetik</h2>' +
+      '<div class="p-sub">'+escapeHtml(g.customerName)+' · '+escapeHtml(g.categoryName)+' · '+d.toLocaleDateString("tr-TR")+'</div>' +
+      '<div class="p-compare">' +
+        '<div class="p-col"><h4>Önce</h4><img src="'+g.beforeDataUrl+'"></div>' +
+        '<div class="p-col"><h4>Sonrası</h4><img src="'+g.afterDataUrl+'"></div>' +
+      '</div>' +
+      '<div class="p-note">'+(g.isReal ? "Gerçek klinik sonucudur." : "Bu görsel yapay zekâ ile üretilmiş bir simülasyondur ve gerçek sonucu garanti etmez.")+'</div>' +
+      '</div>';
+    window.print();
+  }
+
+  $("galleryFilter").addEventListener("change", renderGallery);
+
+  // ---------- export / import ----------
+  $("exportBtn").addEventListener("click", function(){
+    var payload = { exportedAt: new Date().toISOString(), gallery: state.gallery };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "nirvana-oncesi-sonrasi-yedek-" + new Date().toISOString().slice(0,10) + ".json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  });
+
+  $("importTrigger").addEventListener("click", function(){ $("importInput").click(); });
+  $("importInput").addEventListener("change", function(){
+    var file = this.files && this.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e){
+      try {
+        var payload = JSON.parse(e.target.result);
+        if (payload && Array.isArray(payload.gallery)){
+          state.gallery = payload.gallery.concat(state.gallery);
+          renderGallery();
+        } else {
+          alert("Geçersiz yedek dosyası.");
+        }
+      } catch(err){
+        alert("Dosya okunamadı: " + err.message);
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  // ---------- API anahtarını bu bilgisayarda hatırlama ----------
+  var STORAGE_KEY = "nirvana_gemini_api_key";
+  var STORAGE_MODEL = "nirvana_gemini_model";
+
+  function loadSavedSettings(){
+    try {
+      var savedKey = localStorage.getItem(STORAGE_KEY);
+      if (savedKey){
+        $("apiKey").value = savedKey;
+        $("keySavedNote").hidden = false;
+      }
+      var savedModel = localStorage.getItem(STORAGE_MODEL);
+      if (savedModel){
+        var opt = $("modelSelect").querySelector('option[value="'+savedModel+'"]');
+        if (opt) $("modelSelect").value = savedModel;
+      }
+    } catch(e){ /* localStorage kapalıysa sessizce yok say */ }
+  }
+
+  function saveKeyIfPresent(){
+    try {
+      var val = $("apiKey").value.trim();
+      if (val){
+        localStorage.setItem(STORAGE_KEY, val);
+        $("keySavedNote").hidden = false;
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+        $("keySavedNote").hidden = true;
+      }
+    } catch(e){ /* yoksay */ }
+  }
+
+  $("apiKey").addEventListener("change", saveKeyIfPresent);
+  $("apiKey").addEventListener("blur", saveKeyIfPresent);
+  $("modelSelect").addEventListener("change", function(){
+    try { localStorage.setItem(STORAGE_MODEL, this.value); } catch(e){}
+  });
+  $("forgetKeyBtn").addEventListener("click", function(){
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
+    $("apiKey").value = "";
+    $("keySavedNote").hidden = true;
+  });
+
+  function applyAutoConnectVisibility(){
+    if (EMBEDDED_API_KEY){
+      $("settingsPanel").hidden = true;
+      $("autoConnectedNotice").hidden = false;
+    } else {
+      $("settingsPanel").hidden = false;
+      $("autoConnectedNotice").hidden = true;
+    }
+  }
+  $("showSettingsLink").addEventListener("click", function(e){
+    e.preventDefault();
+    $("settingsPanel").hidden = false;
+    $("settingsPanel").scrollIntoView({behavior:"smooth"});
+  });
+
+  // ---------- hero: başla butonu + panel-giriş animasyonu ----------
+  function initHeroEffects(){
+    var heroBtn = $("heroStartBtn");
+    if (heroBtn){
+      heroBtn.addEventListener("click", function(){
+        var target = document.querySelector("main .panel");
+        if (target) target.scrollIntoView({behavior:"smooth", block:"start"});
+      });
+    }
+    var panels = document.querySelectorAll(".panel");
+    if ("IntersectionObserver" in window){
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if (entry.isIntersecting){
+            entry.target.classList.add("in-view");
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold:.12 });
+      panels.forEach(function(p){ io.observe(p); });
+    } else {
+      panels.forEach(function(p){ p.classList.add("in-view"); });
+    }
+  }
+
+  // ---------- init ----------
+  renderCatGrid();
+  renderHairZones();
+  renderBotoxZones();
+  renderBodyZones();
+  renderMakeupOptions();
+  renderGallery();
+  loadSavedSettings();
+  applyAutoConnectVisibility();
+  initHeroEffects();
+})();
+</script>
+
+</body>
+</html>
