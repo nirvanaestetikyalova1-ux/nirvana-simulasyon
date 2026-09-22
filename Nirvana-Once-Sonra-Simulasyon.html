@@ -1347,7 +1347,7 @@
   function lerpPoint(p0, p1, t){ return { x: p0.x + (p1.x-p0.x)*t, y: p0.y + (p1.y-p0.y)*t }; }
 
   // level(1-5) -> sıkıştırma oranı (0..1)
-  function levelToSqueeze(lvl){ return { 1:.04, 2:.08, 3:.12, 4:.16, 5:.20 }[lvl] || 0; }
+  function levelToSqueeze(lvl){ return { 1:.07, 2:.13, 3:.19, 4:.25, 5:.32 }[lvl] || 0; }
 
   // Bir satırdaki pikselleri, cx merkezli ve R yarıçaplı bir bant içinde s oranında
   // içe doğru sıkıştırır (merkeze yakın en çok, bant kenarında hiç — dikişsiz geçiş).
@@ -1535,7 +1535,7 @@
         // arasındaki toplam mesafe olduğu için, yarıçapı bandW'nin ~yarısında tutuyoruz.
         // Önceki 0.95 katsayısı vücut genişliğinin neredeyse 2 katı bir alanı etkileyip
         // kollara ve arka plana taşarak bulanıklık/şekil bozukluğuna yol açıyordu.
-        var R = Math.max(12, bandW*0.52);
+        var R = Math.max(12, bandW*0.68);
         var torsoMul = featherMul(y, torsoTop, torsoBottom, torsoFeather);
         applyOnRow(rowDst, W, cx, R, torsoS*torsoMul, maskRow);
       }
@@ -1546,7 +1546,7 @@
         var rx = y<=kneeY ? lerpPoint(R_.hip,R_.knee,tl).x : lerpPoint(R_.knee,R_.ankle,tl).x;
         // Aynı şekilde bacak yarıçapı da hipW'ye (kalçalar arası TÜM mesafe) göre çok
         // genişti; sol/sağ bacak bantları birbirine ve gövdeye taşıp bozulma yaratıyordu.
-        var legR = Math.max(8, Math.abs(hipW)*0.26);
+        var legR = Math.max(8, Math.abs(hipW)*0.34);
         var legMul = featherMul(y, hipY, legBottom, legFeather);
         applyOnRow(rowDst, W, lx, legR, legS*legMul, maskRow);
         applyOnRow(rowDst, W, rx, legR, legS*legMul, maskRow);
@@ -2368,8 +2368,8 @@
     var heroBtn = $("heroStartBtn");
     if (heroBtn){
       heroBtn.addEventListener("click", function(){
-        var target = document.querySelector("main .panel");
-        if (target) target.scrollIntoView({behavior:"smooth", block:"start"});
+        var target = $("uploadBox") || document.querySelector("main .panel");
+        if (target) target.scrollIntoView({behavior:"smooth", block:"center"});
       });
     }
 
