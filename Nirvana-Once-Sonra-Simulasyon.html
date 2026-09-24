@@ -592,7 +592,13 @@
       <p class="hint" style="margin:2px 0 14px;">Yapay zekâ görsellerini üretmek için kullanılan Google API bağlantısı ve model burada yönetilir.</p>
 
       <div class="notice" id="autoConnectedNotice">
-        ✓ Bu cihaz için Google API anahtarı otomatik tanımlı — aşağıdaki alan yalnızca farklı bir anahtar kullanmak isterseniz gereklidir.
+        ✓ Sunucuya bağlı — Google API anahtarı otomatik kullanılıyor, bu bilgisayarda anahtar girmeniz gerekmiyor. Aşağıdaki alan yalnızca farklı bir anahtar kullanmak isterseniz gereklidir.
+      </div>
+
+      <div class="field" id="accessCodeField" hidden style="margin-bottom:14px;">
+        <label for="accessCode">Şube erişim kodu</label>
+        <input type="password" id="accessCode" placeholder="Yöneticiden aldığınız kod" autocomplete="off">
+        <span class="hint">Bu kod her bilgisayarda bir kez girilir ve o tarayıcıda hatırlanır.</span>
       </div>
 
       <div class="field-row">
@@ -790,6 +796,36 @@
   // Bunun yerine her cihazda ⚙ Ayarlar panelinden bir kez anahtar girilir; anahtar
   // yalnızca o tarayıcının kendi localStorage'ında saklanır, GitHub'a hiç gitmez.
   var EMBEDDED_API_KEY = "";
+
+  // Render sunucusu (server.js) üzerinden çalışırken anahtar sunucuda saklanır
+  // (Render → Environment → GEMINI_API_KEY) ve tarayıcıya hiç gelmez. Sayfa
+  // açılınca "api/config" sorulur; sunucu yoksa (ör. GitHub Pages) sessizce
+  // eski usule, yani bu tarayıcıya girilen anahtara dönülür.
+  var SERVER = { available:false, gemini:false, requiresAccessCode:false };
+  var STORAGE_ACCESS_CODE = "nirvana_access_code";
+  var serverReady = (async function(){
+    if (location.protocol !== "http:" && location.protocol !== "https:") return SERVER;
+    try {
+      var ctrl = new AbortController();
+      var t = setTimeout(function(){ ctrl.abort(); }, 8000);
+      var res = await fetch("api/config", { cache:"no-store", signal: ctrl.signal });
+      clearTimeout(t);
+      var ct = res.headers.get("content-type") || "";
+      if (res.ok && ct.indexOf("application/json") >= 0){
+        var cfg = await res.json();
+        SERVER.available = true;
+        SERVER.gemini = !!cfg.gemini;
+        SERVER.requiresAccessCode = !!cfg.requiresAccessCode;
+      }
+    } catch(e){ /* sunucu yok — tarayıcı anahtarı kullanılacak */ }
+    return SERVER;
+  })();
+  function getAccessCode(){
+    var el = document.getElementById("accessCode");
+    var v = el ? el.value.trim() : "";
+    if (!v){ try { v = localStorage.getItem(STORAGE_ACCESS_CODE) || ""; } catch(e){} }
+    return v;
+  }
 
   // Kart görselleri: Pixabay üzerinden, ticari kullanıma serbest (Pixabay Lisansı,
   // atıf gerektirmez) gerçek stok fotoğraflardır — marka/telif riski taşımaz.
@@ -1642,7 +1678,25 @@
     }
   }
 
+  async function callGeminiViaServer(model, promptText, beforeDataUrl){
+    var res, json;
+    try {
+      res = await fetch("api/gemini/generate", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", "x-app-code": getAccessCode() },
+        body: JSON.stringify({ model: model, promptText: promptText, beforeDataUrl: beforeDataUrl })
+      });
+      json = await res.json().catch(function(){ return null; });
+    } catch (networkErr){
+      throw new Error("Sunucuya ulaşılamadı: " + networkErr.message);
+    }
+    if (res.status === 401) throw new Error("Şube erişim kodu hatalı veya girilmemiş. ⚙ Ayarlar → Bağlantı bölümünden kodu girin.");
+    if (!res.ok || !json || !json.data) throw new Error("Sunucu: " + ((json && json.error) || ("HTTP " + res.status)));
+    return { mime: json.mime || "image/png", data: json.data };
+  }
+
   async function callGeminiEdit(apiKey, model, promptText, beforeDataUrl){
+    if (!apiKey && SERVER.gemini) return callGeminiViaServer(model, promptText, beforeDataUrl);
     var base64 = beforeDataUrl.split(",")[1];
     var mimeMatch = /^data:([^;]+);/.exec(beforeDataUrl);
     var mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
@@ -1848,7 +1902,13 @@
       if (c.key !== "zayiflama") return true;
       return nonWarpZoneKeys.length > 0;
     });
-    if (geminiCats.length && !apiKey){ showError("Lütfen önce Google API anahtarınızı girin."); return; }
+    await serverReady;
+    if (geminiCats.length && !apiKey && !SERVER.gemini){ showError("Lütfen önce Google API anahtarınızı girin."); return; }
+    if (geminiCats.length && !apiKey && SERVER.requiresAccessCode && !getAccessCode()){
+      openSettingsPanel();
+      showError("Bu bilgisayarda ilk kullanım: lütfen ⚙ Ayarlar → Bağlantı bölümüne şube erişim kodunu girin.");
+      return;
+    }
 
     var intensityText = INTENSITY_TEXT[intensity] || "";
 
@@ -2172,8 +2232,17 @@
   // Bu cihaz için sabit bir API anahtarı tanımlıysa içindeki bilgi notu gösterilir,
   // tanımlı değilse anahtar alanı zorunlu hale gelir.
   function applyAutoConnectVisibility(){
-    $("autoConnectedNotice").hidden = !EMBEDDED_API_KEY;
+    $("autoConnectedNotice").hidden = !(EMBEDDED_API_KEY || SERVER.gemini);
+    $("accessCodeField").hidden = !(SERVER.gemini && SERVER.requiresAccessCode);
   }
+  try { $("accessCode").value = localStorage.getItem(STORAGE_ACCESS_CODE) || ""; } catch(e){}
+  $("accessCode").addEventListener("change", function(){
+    try {
+      var v = this.value.trim();
+      if (v) localStorage.setItem(STORAGE_ACCESS_CODE, v); else localStorage.removeItem(STORAGE_ACCESS_CODE);
+    } catch(e){}
+  });
+  serverReady.then(function(){ applyAutoConnectVisibility(); });
   function openSettingsPanel(){
     $("settingsPanel").hidden = false;
     $("settingsToggleBtn").setAttribute("aria-expanded", "true");
