@@ -161,33 +161,34 @@ async function safeJsonFetch(url, opts){
 async function callGeminiEdit(apiKey, model, promptText, beforeDataUrl){
   const { mime, base64 } = splitDataUrl(beforeDataUrl);
   const attempts = [];
+  const body = JSON.stringify({ contents: [{ role: "user", parts: [ { text: promptText }, { inline_data: { mime_type: mime, data: base64 } } ] }] });
+  const m = encodeURIComponent(model);
+  const k = encodeURIComponent(apiKey);
 
-  const legacyBody = { contents: [{ parts: [ { text: promptText }, { inline_data: { mime_type: mime, data: base64 } } ] }] };
-  const r1 = await safeJsonFetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent?key=" + encodeURIComponent(apiKey),
-    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(legacyBody) }
-  );
-  attempts.push("generateContent → " + r1.summary);
-  if (r1.ok){
-    const img1 = findImageInResponse(r1.json);
-    if (img1) return img1;
-    const txt1 = findTextInResponse(r1.json);
-    attempts[attempts.length - 1] += " (yanıtta görsel bulunamadı" + (txt1 ? "; model metni: \"" + txt1 + "\"" : "") + ")";
+  // Google'ın iki farklı anahtar türü var:
+  //  - "AIza..." ile başlayan Google AI Studio anahtarları → generativelanguage.googleapis.com
+  //  - "AQ." ile başlayan Vertex AI (express) anahtarları → aiplatform.googleapis.com
+  // Anahtar türüne göre doğru adres önce denenir; olmazsa diğerleri de denenir.
+  const aiStudio = [
+    { name: "AI Studio (başlık)", url: "https://generativelanguage.googleapis.com/v1beta/models/" + m + ":generateContent", headers: { "x-goog-api-key": apiKey } },
+    { name: "AI Studio (?key)", url: "https://generativelanguage.googleapis.com/v1beta/models/" + m + ":generateContent?key=" + k, headers: {} }
+  ];
+  const vertex = [
+    { name: "Vertex AI", url: "https://aiplatform.googleapis.com/v1/publishers/google/models/" + m + ":generateContent?key=" + k, headers: {} }
+  ];
+  const order = apiKey.indexOf("AQ.") === 0 ? vertex.concat(aiStudio) : aiStudio.concat(vertex);
+
+  for (const ep of order){
+    const r = await safeJsonFetch(ep.url, { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, ep.headers), body });
+    attempts.push(ep.name + " → " + r.summary);
+    if (r.ok){
+      const img = findImageInResponse(r.json);
+      if (img) return img;
+      const txt = findTextInResponse(r.json);
+      attempts[attempts.length - 1] += " (yanıtta görsel bulunamadı" + (txt ? "; model metni: \"" + txt + "\"" : "") + ")";
+      break; // anahtar kabul edildi ama görsel dönmedi — diğer adresleri denemeye gerek yok
+    }
   }
-
-  const interBody = { model, input: [ { type: "image", mime_type: mime, data: base64 }, { type: "text", text: promptText } ] };
-  const r2 = await safeJsonFetch(
-    "https://generativelanguage.googleapis.com/v1beta/interactions?key=" + encodeURIComponent(apiKey),
-    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(interBody) }
-  );
-  attempts.push("interactions → " + r2.summary);
-  if (r2.ok){
-    const img2 = findImageInResponse(r2.json);
-    if (img2) return img2;
-    const txt2 = findTextInResponse(r2.json);
-    attempts[attempts.length - 1] += " (yanıtta görsel bulunamadı" + (txt2 ? "; model metni: \"" + txt2 + "\"" : "") + ")";
-  }
-
   throw new Error(attempts.join("  |  "));
 }
 
@@ -330,8 +331,10 @@ const routes = {
 
   "POST /api/gemini/generate": async (req, res) => {
     if (!checkAccessCode(req)) return sendJson(res, 401, { error: "Geçersiz veya eksik erişim kodu." });
-    const apiKey = process.env.GEMINI_API_KEY;
+    // Yapıştırırken araya karışan boşluk, satır sonu veya tırnakları temizle.
+    const apiKey = (process.env.GEMINI_API_KEY || "").trim().replace(/^["']+|["']+$/g, "").trim();
     if (!apiKey) return sendJson(res, 400, { error: "Sunucuda GEMINI_API_KEY tanımlı değil." });
+    console.log("[gemini] anahtar türü=" + (apiKey.indexOf("AIza") === 0 ? "AI Studio (AIza)" : apiKey.indexOf("AQ.") === 0 ? "Vertex (AQ.)" : "bilinmiyor") + " uzunluk=" + apiKey.length);
     try {
       const body = await readJsonBody(req, 25 * 1024 * 1024);
       const { model, promptText, beforeDataUrl } = body;
