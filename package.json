@@ -1,0 +1,14 @@
+{
+  "name": "nirvana-once-sonra-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Nirvana Once/Sonra Simulasyon - backend proxy (Gemini / fal.ai / OpenAI / YouCam). Bagimlilik yok, sadece Node.js yerlesik modulleri kullanilir.",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {}
+}
